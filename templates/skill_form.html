@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Skill Form | SkillRadar{% endblock %}
+{% block content %}
+<section class="form-page">
+    <form class="card form-card premium-surface skill-form-card" method="POST">
+        <p class="eyebrow">Self assessment</p>
+        <h1>Rate your current strengths</h1>
+        <p class="muted">Use the sliders to self-assess from 1 to 10. Your saved values will be loaded automatically each time you return.</p>
+        <div class="slider-list">
+            {% for field in ['python', 'sql', 'java', 'dsa', 'communication', 'problem_solving', 'web_dev', 'ml'] %}
+                <div class="slider-row">
+                    <div class="slider-header">
+                        <label for="{{ field }}">{{ skill_labels[field] }}</label>
+                        <span class="slider-value" data-slider-value="{{ field }}">{{ skills[field] }}</span>
+                    </div>
+                    <input
+                        id="{{ field }}"
+                        class="skill-slider"
+                        type="range"
+                        min="1"
+                        max="10"
+                        value="{{ skills[field] }}"
+                        name="{{ field }}"
+                        data-slider="{{ field }}"
+                    >
+                </div>
+            {% endfor %}
+        </div>
+        <button class="button" type="submit">Save Skill Profile</button>
+    </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('[data-slider]').forEach((slider) => {
+    const output = document.querySelector(`[data-slider-value="${slider.dataset.slider}"]`);
+    const paintSlider = () => {
+        const min = Number(slider.min);
+        const max = Number(slider.max);
+        const value = Number(slider.value);
+        const percent = ((value - min) / (max - min)) * 100;
+        slider.style.background = `linear-gradient(90deg, #f0c040 ${percent}%, #1b2848 ${percent}%)`;
+        output.textContent = value;
+    };
+    slider.addEventListener('input', paintSlider);
+    paintSlider();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}Contact | SkillRadar{% endblock %}
+{% block content %}
+<section class="contact-page">
+    <div class="card map-card premium-surface contact-hero-card">
+        <p class="eyebrow">Visit the placement cell</p>
+        <h1>Contact & mentor network</h1>
+        <div class="map-wrap">
+            <iframe
+                src="{{ contact_settings.map_embed_url }}"
+                width="100%"
+                height="320"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+        <div class="office-details">
+            <div>
+                <h3>Placement Office</h3>
+                <p>{{ contact_settings.office_address }}</p>
+            </div>
+            <div>
+                <h3>Call</h3>
+                <p>{{ contact_settings.phone }}</p>
+            </div>
+            <div>
+                <h3>Email</h3>
+                <p>{{ contact_settings.email }}</p>
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.role == 'officer' %}
+        <section class="card premium-surface contact-settings-card">
+            <p class="eyebrow">Officer controls</p>
+            <h2>Update contact details</h2>
+            <p class="muted">Use a Google Maps embed URL if you want the map to point to a different location. Address, phone, and email will update immediately on this page.</p>
+            <form class="form-grid" method="POST" action="{{ url_for('update_contact_page_settings') }}" data-validate>
+                <label class="full-span">Map Embed URL
+                    <input type="url" name="map_embed_url" value="{{ contact_settings.map_embed_url }}" required>
+                </label>
+                <label class="full-span">Placement Office Address
+                    <input type="text" name="office_address" value="{{ contact_settings.office_address }}" required>
+                </label>
+                <label>Phone
+                    <input type="text" name="phone" value="{{ contact_settings.phone }}" required>
+                </label>
+                <label>Email
+                    <input type="email" name="email" value="{{ contact_settings.email }}" required>
+                </label>
+                <div class="action-row full-span">
+                    <button class="button" type="submit">Update Contact Info</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card premium-surface contact-settings-card">
+            <p class="eyebrow">Mentor controls</p>
+            <h2>Add alumni mentor</h2>
+            <form class="form-grid" method="POST" action="{{ url_for('add_mentor') }}" data-validate>
+                <label>Name
+                    <input type="text" name="name" required>
+                </label>
+                <label>Batch
+                    <input type="text" name="batch" placeholder="Batch of 2024" required>
+                </label>
+                <label>Company
+                    <input type="text" name="company" required>
+                </label>
+                <label>LinkedIn URL
+                    <input type="url" name="linkedin" required>
+                </label>
+                <label class="full-span">Email
+                    <input type="email" name="email" required>
+                </label>
+                <div class="action-row full-span">
+                    <button class="button" type="submit">Add Mentor</button>
+                </div>
+            </form>
+        </section>
+    {% endif %}
+
+    <div class="mentor-grid">
+        {% for mentor in mentors %}
+            <article class="card mentor-card premium-mentor-card">
+                <p class="eyebrow">{{ mentor.batch }}</p>
+                <h2>{{ mentor.name }}</h2>
+                <p>{{ mentor.company }}</p>
+                <a href="{{ mentor.linkedin }}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                <a href="mailto:{{ mentor.email }}">{{ mentor.email }}</a>
+
+                {% if current_user.role == 'officer' %}
+                    <button
+                        class="button secondary-button mentor-edit-trigger"
+                        type="button"
+                        data-open-mentor-modal="mentor-modal-{{ mentor.id }}"
+                    >
+                        Edit Mentor
+                    </button>
+                    <form method="POST" action="{{ url_for('delete_mentor', mentor_id=mentor.id) }}" onsubmit="return confirm('Delete this mentor card?');">
+                        <button class="button danger-button" type="submit">Delete Mentor</button>
+                    </form>
+                {% endif %}
+            </article>
+        {% endfor %}
+    </div>
+
+    {% if current_user.role == 'officer' %}
+        {% for mentor in mentors %}
+            <div class="mentor-modal" id="mentor-modal-{{ mentor.id }}" data-mentor-modal hidden>
+                <div class="mentor-modal-backdrop" data-close-mentor-modal></div>
+                <div class="card mentor-modal-card premium-surface">
+                    <div class="mentor-modal-header">
+                        <div>
+                            <p class="eyebrow">Mentor editor</p>
+                            <h2>Update {{ mentor.name }}</h2>
+                        </div>
+                        <button class="mentor-modal-close" type="button" data-close-mentor-modal aria-label="Close editor">×</button>
+                    </div>
+                    <form class="form-grid" method="POST" action="{{ url_for('update_mentor', mentor_id=mentor.id) }}" data-validate>
+                        <label>Name
+                            <input type="text" name="name" value="{{ mentor.name }}" required>
+                        </label>
+                        <label>Batch
+                            <input type="text" name="batch" value="{{ mentor.batch }}" required>
+                        </label>
+                        <label>Company
+                            <input type="text" name="company" value="{{ mentor.company }}" required>
+                        </label>
+                        <label>LinkedIn URL
+                            <input type="url" name="linkedin" value="{{ mentor.linkedin }}" required>
+                        </label>
+                        <label class="full-span">Email
+                            <input type="email" name="email" value="{{ mentor.email }}" required>
+                        </label>
+                        <div class="action-row full-span">
+                            <button class="button" type="submit">Update Mentor</button>
+                            <button class="button secondary-button" type="button" data-close-mentor-modal>Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('[data-open-mentor-modal]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const modal = document.getElementById(button.dataset.openMentorModal);
+        if (!modal) return;
+        modal.hidden = false;
+        document.body.classList.add('modal-open');
+        const firstInput = modal.querySelector('input');
+        if (firstInput) firstInput.focus();
+    });
+});
+
+document.querySelectorAll('[data-mentor-modal]').forEach((modal) => {
+    const closeModal = () => {
+        modal.hidden = true;
+        document.body.classList.remove('modal-open');
+    };
+
+    modal.querySelectorAll('[data-close-mentor-modal]').forEach((closeButton) => {
+        closeButton.addEventListener('click', closeModal);
+    });
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !modal.hidden) {
+            closeModal();
+        }
+    });
+});
+</script>
+{% endblock %}

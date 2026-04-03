@@ -1,0 +1,6 @@
+Flask
+Flask-Login
+PyMySQL
+Werkzeug
+python-dotenv
+cryptography

@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}Officer Panel | SkillRadar{% endblock %}
+{% block content %}
+<section class="officer-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Placement operations</p>
+            <h1>Officer Panel</h1>
+        </div>
+        <a
+            class="button secondary-button"
+            href="{{ url_for('export_officer_csv', department=selected_department, min_cgpa=min_cgpa, q=student_search) }}"
+        >
+            Export CSV
+        </a>
+    </div>
+
+    <form class="card filter-bar premium-filter-bar" method="GET">
+        <label class="filter-field">
+            Search Students
+            <input type="text" name="q" value="{{ student_search }}" placeholder="Name, roll number, or email">
+        </label>
+        <label class="filter-field">
+            Department
+            <div class="custom-select" data-custom-select>
+                <input type="hidden" name="department" value="{{ selected_department }}">
+                <button
+                    class="custom-select-trigger"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    data-select-trigger
+                >
+                    <span data-select-label>{{ selected_department or 'All Departments' }}</span>
+                </button>
+                <div class="custom-select-menu" data-select-menu role="listbox">
+                    <button class="custom-select-option {% if not selected_department %}is-selected{% endif %}" type="button" data-select-option data-value="">
+                        All Departments
+                    </button>
+                    {% for department in departments %}
+                        <button
+                            class="custom-select-option {% if selected_department == department %}is-selected{% endif %}"
+                            type="button"
+                            data-select-option
+                            data-value="{{ department }}"
+                        >
+                            {{ department }}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </label>
+        <label class="filter-field">
+            Min CGPA
+            <input type="number" step="0.01" min="0" max="10" name="min_cgpa" value="{{ min_cgpa }}">
+        </label>
+        <button class="button filter-submit" type="submit">Apply Filters</button>
+    </form>
+
+    <section class="card officer-profile-card">
+        <p class="eyebrow">Officer account</p>
+        <h2>Update officer details</h2>
+        <form class="form-grid" method="POST" action="{{ url_for('update_officer_details') }}" data-validate>
+            <label>Name
+                <input type="text" name="name" value="{{ current_user.name }}" required>
+                <span class="field-error" data-error-for="name"></span>
+            </label>
+            <label>Email
+                <input type="email" name="email" value="{{ current_user.email }}" required>
+                <span class="field-error" data-error-for="email"></span>
+            </label>
+            <label class="full-span">New Password
+                <input type="password" name="password" placeholder="Leave blank to keep current password">
+                <span class="field-error" data-error-for="password"></span>
+            </label>
+            <div class="action-row full-span">
+                <button class="button" type="submit">Update Officer Details</button>
+            </div>
+        </form>
+    </section>
+
+    <div class="card table-card premium-table-card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Roll No</th>
+                        <th>Department</th>
+                        <th>CGPA</th>
+                        <th>Skill Avg Score</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                        <tr class="{% if student.cgpa < 6.0 %}danger-row{% endif %}">
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.roll_number }}</td>
+                            <td>{{ student.department }}</td>
+                            <td>{{ student.cgpa }}</td>
+                            <td>{{ student.skill_avg or 0 }}</td>
+                            <td>
+                                <details class="inline-editor">
+                                    <summary>Edit</summary>
+                                    <form class="form-grid compact-edit" method="POST" action="{{ url_for('officer_update_student', user_id=student.id) }}" data-validate>
+                                        <label>Name
+                                            <input type="text" name="name" value="{{ student.name }}" required>
+                                        </label>
+                                        <label>Email
+                                            <input type="email" name="email" value="{{ student.email }}" required>
+                                        </label>
+                                        <label>CGPA
+                                            <input type="number" step="0.01" min="0" max="10" name="cgpa" value="{{ student.cgpa }}" required>
+                                        </label>
+                                        <label>Roll Number
+                                            <input type="text" name="roll_number" value="{{ student.roll_number }}" required>
+                                        </label>
+                                        <label class="full-span">Department
+                                            <input type="text" name="department" value="{{ student.department }}" required>
+                                        </label>
+                                        <div class="action-row full-span">
+                                            <button class="button" type="submit">Save</button>
+                                        </div>
+                                    </form>
+                                </details>
+                                <form method="POST" action="{{ url_for('officer_delete_student', user_id=student.id) }}" onsubmit="return confirm('Delete this student record?');">
+                                    <button class="button danger-button" type="submit">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6">No students match the selected filters.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if student_total_pages > 1 %}
+            <div class="pagination-bar">
+                <a
+                    class="button secondary-button pagination-button {% if student_page == 1 %}is-disabled{% endif %}"
+                    href="{{ url_for('officer_panel', page=student_page-1, department=selected_department, min_cgpa=min_cgpa, q=student_search) if student_page > 1 else '#' }}"
+                >
+                    Previous
+                </a>
+                <span class="pagination-status">Page {{ student_page }} of {{ student_total_pages }}</span>
+                <a
+                    class="button secondary-button pagination-button {% if student_page == student_total_pages %}is-disabled{% endif %}"
+                    href="{{ url_for('officer_panel', page=student_page+1, department=selected_department, min_cgpa=min_cgpa, q=student_search) if student_page < student_total_pages else '#' }}"
+                >
+                    Next
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('[data-custom-select]').forEach((selectRoot) => {
+    const hiddenInput = selectRoot.querySelector('input[type="hidden"]');
+    const trigger = selectRoot.querySelector('[data-select-trigger]');
+    const label = selectRoot.querySelector('[data-select-label]');
+    const options = Array.from(selectRoot.querySelectorAll('[data-select-option]'));
+    let activeIndex = Math.max(0, options.findIndex((option) => option.classList.contains('is-selected')));
+
+    const syncActiveOption = () => {
+        options.forEach((option, index) => {
+            option.classList.toggle('is-active', index === activeIndex);
+        });
+    };
+
+    const closeMenu = () => {
+        selectRoot.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded', 'false');
+    };
+
+    const openMenu = () => {
+        selectRoot.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+        syncActiveOption();
+    };
+
+    const selectOption = (option, shouldFocusTrigger = true) => {
+        hiddenInput.value = option.dataset.value;
+        label.textContent = option.textContent.trim();
+        options.forEach((item) => item.classList.remove('is-selected'));
+        option.classList.add('is-selected');
+        activeIndex = options.indexOf(option);
+        syncActiveOption();
+        closeMenu();
+        if (shouldFocusTrigger) {
+            trigger.focus();
+        }
+    };
+
+    trigger.addEventListener('click', () => {
+        if (selectRoot.classList.contains('is-open')) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+
+    options.forEach((option) => {
+        option.addEventListener('click', () => {
+            selectOption(option);
+        });
+    });
+
+    trigger.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (!selectRoot.classList.contains('is-open')) {
+                openMenu();
+            }
+            const direction = event.key === 'ArrowDown' ? 1 : -1;
+            activeIndex = (activeIndex + direction + options.length) % options.length;
+            syncActiveOption();
+            options[activeIndex].focus();
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            if (selectRoot.classList.contains('is-open')) {
+                selectOption(options[activeIndex]);
+            } else {
+                openMenu();
+            }
+        }
+
+        if (event.key === 'Escape') {
+            closeMenu();
+        }
+    });
+
+    options.forEach((option, index) => {
+        option.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const direction = event.key === 'ArrowDown' ? 1 : -1;
+                activeIndex = (index + direction + options.length) % options.length;
+                syncActiveOption();
+                options[activeIndex].focus();
+            }
+
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectOption(option);
+            }
+
+            if (event.key === 'Escape') {
+                closeMenu();
+                trigger.focus();
+            }
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!selectRoot.contains(event.target)) {
+            closeMenu();
+        }
+    });
+
+    syncActiveOption();
+});
+</script>
+{% endblock %}

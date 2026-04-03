@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Placement Hub | SkillRadar{% endblock %}
+{% block content %}
+<section class="placement-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Campus opportunities</p>
+            <h1>Placement Hub</h1>
+        </div>
+        {% if current_user.role == 'officer' %}
+            <span class="role-badge">Officer Controls Enabled</span>
+        {% endif %}
+    </div>
+
+    <form class="card filter-bar premium-filter-bar placement-search-bar" method="GET">
+        <label class="filter-field">
+            Search Companies
+            <input type="text" name="q" value="{{ company_search }}" placeholder="Company, role, or skills">
+        </label>
+        <button class="button filter-submit" type="submit">Search</button>
+    </form>
+
+    {% if current_user.role == 'officer' %}
+        <form class="card form-card compact-form premium-surface company-create-card" method="POST" data-validate>
+            <h2>Add a new company drive</h2>
+            <div class="form-grid">
+                <label>Name
+                    <input type="text" name="name" required>
+                    <span class="field-error" data-error-for="name"></span>
+                </label>
+                <label>Role
+                    <input type="text" name="role" required>
+                    <span class="field-error" data-error-for="role"></span>
+                </label>
+                <label>CTC (LPA)
+                    <input type="number" step="0.01" name="ctc_lpa" required>
+                    <span class="field-error" data-error-for="ctc_lpa"></span>
+                </label>
+                <label>Min CGPA
+                    <input type="number" step="0.01" min="0" max="10" name="min_cgpa" required>
+                    <span class="field-error" data-error-for="min_cgpa"></span>
+                </label>
+                <label class="full-span">Skills Required
+                    <input type="text" name="skills_required" required>
+                    <span class="field-error" data-error-for="skills_required"></span>
+                </label>
+                <label>Drive Date
+                    <input type="date" name="drive_date" required>
+                    <span class="field-error" data-error-for="drive_date"></span>
+                </label>
+                <label class="full-span">Prep Kit URL
+                    <input type="url" name="prep_kit_url" required>
+                    <span class="field-error" data-error-for="prep_kit_url"></span>
+                </label>
+            </div>
+            <button class="button" type="submit">Add Company</button>
+        </form>
+    {% endif %}
+
+    <div class="company-grid">
+        {% for company in companies %}
+            <article class="card company-card premium-company-card">
+                <div class="company-head">
+                    <div>
+                        <h2>{{ company.name }}</h2>
+                        <p>{{ company.role }}</p>
+                    </div>
+                    {% if current_user.role == 'student' %}
+                        {% if current_user.cgpa >= company.min_cgpa %}
+                            <span class="status-pill eligible">Eligible ✓</span>
+                        {% else %}
+                            <span class="status-pill ineligible">Not Eligible ✗</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="company-meta">
+                    <span>CTC: {{ company.ctc_lpa }} LPA</span>
+                    <span>Min CGPA: {{ company.min_cgpa }}</span>
+                    <span>Drive Date: {{ company.drive_date.strftime('%d %b %Y') }}</span>
+                </div>
+                <p><strong>Skills Required:</strong> {{ company.skills_required }}</p>
+                <a class="button secondary-button" href="{{ company.prep_kit_url }}" target="_blank" rel="noopener noreferrer">Get Prep Kit</a>
+
+                {% if current_user.role == 'officer' %}
+                    <form class="form-grid compact-edit company-edit-panel" method="POST" action="{{ url_for('update_company_route', company_id=company.id) }}" data-validate>
+                        <label>Name
+                            <input type="text" name="name" value="{{ company.name }}" required>
+                        </label>
+                        <label>Role
+                            <input type="text" name="role" value="{{ company.role }}" required>
+                        </label>
+                        <label>CTC (LPA)
+                            <input type="number" step="0.01" name="ctc_lpa" value="{{ company.ctc_lpa }}" required>
+                        </label>
+                        <label>Min CGPA
+                            <input type="number" step="0.01" min="0" max="10" name="min_cgpa" value="{{ company.min_cgpa }}" required>
+                        </label>
+                        <label class="full-span">Skills Required
+                            <input type="text" name="skills_required" value="{{ company.skills_required }}" required>
+                        </label>
+                        <label>Drive Date
+                            <input type="date" name="drive_date" value="{{ company.drive_date.strftime('%Y-%m-%d') }}" required>
+                        </label>
+                        <label class="full-span">Prep Kit URL
+                            <input type="url" name="prep_kit_url" value="{{ company.prep_kit_url }}" required>
+                        </label>
+                        <div class="action-row full-span">
+                            <button class="button" type="submit">Update Company</button>
+                        </div>
+                    </form>
+                    <form method="POST" action="{{ url_for('delete_company_route', company_id=company.id) }}" onsubmit="return confirm('Delete this company drive?');">
+                        <button class="button danger-button" type="submit">Delete Company</button>
+                    </form>
+                {% endif %}
+            </article>
+        {% endfor %}
+    </div>
+
+    {% if company_total_pages > 1 %}
+        <div class="card pagination-shell">
+            <div class="pagination-bar">
+                <a
+                    class="button secondary-button pagination-button {% if company_page == 1 %}is-disabled{% endif %}"
+                    href="{{ url_for('placement_hub', page=company_page-1, q=company_search) if company_page > 1 else '#' }}"
+                >
+                    Previous
+                </a>
+                <span class="pagination-status">Page {{ company_page }} of {{ company_total_pages }}</span>
+                <a
+                    class="button secondary-button pagination-button {% if company_page == company_total_pages %}is-disabled{% endif %}"
+                    href="{{ url_for('placement_hub', page=company_page+1, q=company_search) if company_page < company_total_pages else '#' }}"
+                >
+                    Next
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Login | SkillRadar{% endblock %}
+{% block content %}
+<section class="auth-layout">
+    <div class="hero-panel card premium-auth-hero">
+        <p class="eyebrow">Campus intelligence for placements</p>
+        <h1>Track skills, benchmark readiness, and plan every placement season with confidence.</h1>
+        <p>SkillRadar helps students map their strengths and gives placement officers a clean campus-wide view of eligibility and skill health.</p>
+        <div class="hero-stats">
+            <div>
+                <strong>8</strong>
+                <span>core skills mapped</span>
+            </div>
+            <div>
+                <strong>10</strong>
+                <span>seeded hiring companies</span>
+            </div>
+            <div>
+                <strong>2</strong>
+                <span>campus roles supported</span>
+            </div>
+        </div>
+        <div class="hero-ribbon">
+            <span>Student Skill Mapping</span>
+            <span>Officer Visibility</span>
+            <span>Placement Readiness</span>
+        </div>
+    </div>
+
+    <form class="card auth-card premium-auth-card" method="POST" data-validate>
+        <p class="eyebrow">Welcome back</p>
+        <h2>Sign in to SkillRadar</h2>
+        <p class="muted">Access your academic placement command center and continue from where you left off.</p>
+        <label>Email
+            <input type="email" name="email" placeholder="you@campus.edu" required>
+            <span class="field-error" data-error-for="email"></span>
+        </label>
+        <label>Password
+            <input type="password" name="password" placeholder="Enter your password" required>
+            <span class="field-error" data-error-for="password"></span>
+        </label>
+        <button class="button auth-submit" type="submit">Login</button>
+        <p class="muted">Students can create an account. Placement officers use the seeded officer login.</p>
+        <p class="inline-link">New student? <a href="{{ url_for('register') }}">Create your account</a></p>
+    </form>
+</section>
+{% endblock %}

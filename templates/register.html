@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Register | SkillRadar{% endblock %}
+{% block content %}
+<section class="form-page">
+    <form class="card form-card premium-register-card" method="POST" data-validate>
+        <p class="eyebrow">Student onboarding</p>
+        <h1>Create your SkillRadar profile</h1>
+        <p class="muted">Build your placement-ready identity with academic details, department context, and a profile made for skill tracking.</p>
+        <div class="form-grid">
+            <label>Name
+                <input type="text" name="name" value="{{ form.get('name', '') }}" required>
+                <span class="field-error" data-error-for="name"></span>
+            </label>
+            <label>Email
+                <input type="email" name="email" value="{{ form.get('email', '') }}" required>
+                <span class="field-error" data-error-for="email"></span>
+            </label>
+            <label>Password
+                <input type="password" name="password" required>
+                <span class="field-error" data-error-for="password"></span>
+            </label>
+            <label>Confirm Password
+                <input type="password" name="confirm_password" required>
+                <span class="field-error" data-error-for="confirm_password"></span>
+            </label>
+            <label>CGPA
+                <input type="number" name="cgpa" step="0.01" min="0" max="10" value="{{ form.get('cgpa', '') }}" required>
+                <span class="field-error" data-error-for="cgpa"></span>
+            </label>
+            <label>Roll Number
+                <input type="text" name="roll_number" value="{{ form.get('roll_number', '') }}" required>
+                <span class="field-error" data-error-for="roll_number"></span>
+            </label>
+            <label class="full-span">Department
+                <input type="text" name="department" value="{{ form.get('department', '') }}" placeholder="Computer Science" required>
+                <span class="field-error" data-error-for="department"></span>
+            </label>
+        </div>
+        <button class="button auth-submit" type="submit">Register</button>
+        <p class="inline-link">Already registered? <a href="{{ url_for('login') }}">Go to login</a></p>
+    </form>
+</section>
+{% endblock %}

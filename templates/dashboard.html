@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | SkillRadar{% endblock %}
+{% block content %}
+<section class="dashboard-layout">
+    <aside class="card sidebar-card premium-sidebar">
+        <p class="eyebrow">Student snapshot</p>
+        <h2>{{ current_user.name }}</h2>
+        <div class="metric-badge">CGPA {{ '%.2f'|format(current_user.cgpa) }}</div>
+        <div class="sidebar-stat">
+            <span>Skill completion</span>
+            <strong>{{ completion }}%</strong>
+        </div>
+        <div class="sidebar-stat">
+            <span>Average score</span>
+            <strong>{{ skill_avg }}/10</strong>
+        </div>
+        <div class="sidebar-stat">
+            <span>Current gap</span>
+            <strong>{{ overall_gap }}%</strong>
+        </div>
+        <div class="quick-links">
+            <a href="{{ url_for('skill_form') }}">Update skill ratings</a>
+            <a href="{{ url_for('visualize') }}">See radar chart</a>
+            <a href="{{ url_for('placement_hub') }}">Explore companies</a>
+        </div>
+    </aside>
+
+    <div class="content-stack">
+        <section class="card premium-surface">
+            <p class="eyebrow">Overview</p>
+            <h1>Placement readiness, one glance at a time</h1>
+            <p>Your current skills are being benchmarked against common industry expectations so you can focus your practice where it matters most.</p>
+            <div class="summary-grid">
+                {% for field, value in skills.items() if field in ['python', 'sql', 'java', 'dsa', 'communication', 'problem_solving', 'web_dev', 'ml'] %}
+                    <div class="summary-card">
+                        <span>{{ field.replace('_', ' ')|title }}</span>
+                        <strong>{{ value }}/10</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="card premium-surface">
+            <p class="eyebrow">Focus areas</p>
+            <h2>Priority actions</h2>
+            <div class="focus-list">
+                {% if top_focus %}
+                    {% for skill in top_focus %}
+                        <div class="focus-item">{{ skill }}</div>
+                    {% endfor %}
+                {% else %}
+                    <div class="focus-item">You are aligned with the current benchmark across all skills.</div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="card premium-surface account-control-card">
+            <p class="eyebrow">Account controls</p>
+            <h2>Update student profile</h2>
+            <form class="form-grid" method="POST" action="{{ url_for('update_student_profile') }}" data-validate>
+                <label>Name
+                    <input type="text" name="name" value="{{ current_user.name }}" required>
+                    <span class="field-error" data-error-for="name"></span>
+                </label>
+                <label>Email
+                    <input type="email" name="email" value="{{ current_user.email }}" required>
+                    <span class="field-error" data-error-for="email"></span>
+                </label>
+                <label>CGPA
+                    <input type="number" step="0.01" min="0" max="10" name="cgpa" value="{{ current_user.cgpa }}" required>
+                    <span class="field-error" data-error-for="cgpa"></span>
+                </label>
+                <label>Roll Number
+                    <input type="text" name="roll_number" value="{{ current_user.roll_number }}" required>
+                    <span class="field-error" data-error-for="roll_number"></span>
+                </label>
+                <label class="full-span">Department
+                    <input type="text" name="department" value="{{ current_user.department }}" required>
+                    <span class="field-error" data-error-for="department"></span>
+                </label>
+                <label class="full-span">New Password
+                    <input type="password" name="password" placeholder="Leave blank to keep current password">
+                    <span class="field-error" data-error-for="password"></span>
+                </label>
+                <div class="action-row full-span">
+                    <button class="button" type="submit">Update Profile</button>
+                </div>
+            </form>
+            <form method="POST" action="{{ url_for('delete_student_account') }}" onsubmit="return confirm('Delete your student account permanently?');">
+                <button class="button danger-button" type="submit">Delete My Account</button>
+            </form>
+        </section>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SkillRadar{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+    <div class="page-shell">
+        <nav class="navbar">
+            <a class="brand" href="{{ url_for('home') }}">
+                <span class="brand-mark">SR</span>
+                <span>
+                    <strong>SkillRadar</strong>
+                    <small>Smart Campus Placement &amp; Skill Analyzer</small>
+                </span>
+            </a>
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.role == 'student' %}
+                        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                        <a href="{{ url_for('skill_form') }}">Skill Form</a>
+                        <a href="{{ url_for('visualize') }}">Visualize</a>
+                    {% endif %}
+                    <a href="{{ url_for('placement_hub') }}">Placement Hub</a>
+                    <a href="{{ url_for('contact') }}">Contact</a>
+                    {% if current_user.role == 'officer' %}
+                        <a href="{{ url_for('officer_panel') }}">Officer Panel</a>
+                    {% endif %}
+                    <span class="role-badge">{{ current_user.role|title }}</span>
+                    <a class="nav-cta" href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a class="nav-cta" href="{{ url_for('register') }}">Register</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-stack">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% if error_message %}
+                <section class="card centered-card">
+                    <h1>Access Restricted</h1>
+                    <p>{{ error_message }}</p>
+                    <a class="button" href="{{ url_for('home') }}">Return Home</a>
+                </section>
+            {% else %}
+                {% block content %}{% endblock %}
+            {% endif %}
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+    <script>
+    document.querySelectorAll('form[data-validate]').forEach((form) => {
+        const fields = form.querySelectorAll('input, select, textarea');
+
+        const showError = (field) => {
+            const errorNode = form.querySelector(`[data-error-for="${field.name}"]`);
+            if (!errorNode) return;
+            errorNode.textContent = field.validationMessage;
+            errorNode.classList.toggle('is-visible', !field.validity.valid);
+            field.classList.toggle('is-invalid', !field.validity.valid);
+        };
+
+        fields.forEach((field) => {
+            field.addEventListener('input', () => showError(field));
+            field.addEventListener('blur', () => showError(field));
+        });
+
+        form.addEventListener('submit', (event) => {
+            let firstInvalid = null;
+            fields.forEach((field) => {
+                showError(field);
+                if (!field.validity.valid && !firstInvalid) {
+                    firstInvalid = field;
+                }
+            });
+            if (firstInvalid) {
+                event.preventDefault();
+                firstInvalid.focus();
+            }
+        });
+    });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

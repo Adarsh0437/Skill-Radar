@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Visualize | SkillRadar{% endblock %}
+{% block content %}
+<section class="visualize-page">
+    <div class="card chart-card premium-surface">
+        <p class="eyebrow">Radar benchmark</p>
+        <h1>Your skills vs industry standard</h1>
+        <div id="skill-radar-chart"
+             data-pretty-labels='{{ pretty_labels | tojson }}'
+             data-student='{{ student_chart | tojson }}'
+             data-industry='{{ industry_chart | tojson }}'></div>
+    </div>
+
+    <div class="card insight-card premium-surface insight-grid-card">
+        <h2>Gap analysis</h2>
+        <p>Your overall skill gap is <strong>{{ overall_gap }}%</strong>. Focus on:
+            <strong>{{ top_focus|join(', ') if top_focus else 'maintaining your strengths across all tracked skills' }}</strong>
+        </p>
+        <div class="summary-grid">
+            {% for skill, gap in per_skill_gap.items() %}
+                <div class="summary-card">
+                    <span>{{ skill_labels[skill] }}</span>
+                    <strong>{{ gap }} point gap</strong>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
