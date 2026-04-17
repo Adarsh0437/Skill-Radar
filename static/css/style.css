@@ -58,17 +58,17 @@ button, input, select, textarea { font: inherit; }
 .brand strong, h1, h2, h3 { font-family: 'Playfair Display', serif; }
 .brand small { display: block; color: var(--muted); font-size: 0.78rem; }
 
-.brand-mark {
-    width: 48px;
-    height: 48px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    background: linear-gradient(135deg, rgba(240, 192, 64, 0.26), rgba(77, 163, 255, 0.18));
-    border: 1px solid var(--border);
-    color: var(--gold);
-    font-weight: 700;
+.brand-logo {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.28));
+}
+
+.brand-copy strong {
+    display: block;
+    font-size: 1.9rem;
+    line-height: 0.95;
 }
 
 .nav-links {
