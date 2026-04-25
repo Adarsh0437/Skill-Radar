@@ -81,6 +81,21 @@ button, input, select, textarea { font: inherit; }
 .nav-links a { color: var(--muted); }
 .nav-links a:hover { color: var(--text); }
 .nav-cta { color: var(--text) !important; }
+.nav-links a.active {
+    color: var(--text);
+    position: relative;
+}
+
+.nav-links a.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.45rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--gold), rgba(77, 163, 255, 0.75));
+}
 
 .main-content {
     width: min(1200px, 92vw);
@@ -150,6 +165,8 @@ button.button {
     border-radius: 999px;
     font-size: 0.9rem;
     font-weight: 700;
+    min-width: 120px;
+    text-align: center;
 }
 
 .role-badge {
@@ -194,6 +211,46 @@ button.button {
 .auth-layout {
     grid-template-columns: 1.2fr 0.9fr;
     align-items: stretch;
+}
+
+.auth-hub-layout {
+    grid-template-columns: 1.1fr 1fr;
+}
+
+.auth-portal-grid {
+    display: grid;
+    gap: 1rem;
+    align-content: stretch;
+}
+
+.auth-portal-card {
+    display: grid;
+    gap: 1rem;
+    align-content: space-between;
+    min-height: 250px;
+    background:
+        linear-gradient(180deg, rgba(16, 24, 45, 0.98), rgba(11, 17, 33, 0.98)),
+        radial-gradient(circle at top right, rgba(240, 192, 64, 0.08), transparent 34%);
+}
+
+.auth-portal-actions {
+    display: grid;
+    gap: 0.8rem;
+    align-items: start;
+}
+
+.auth-switcher {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.text-link {
+    color: var(--gold);
+    font-weight: 700;
+}
+
+.small-text {
+    font-size: 0.92rem;
 }
 
 .hero-panel { padding: 2rem; }
@@ -824,7 +881,7 @@ tbody tr:hover {
 }
 
 @media (max-width: 920px) {
-    .auth-layout, .dashboard-layout { grid-template-columns: 1fr; }
+    .auth-layout, .dashboard-layout, .auth-hub-layout { grid-template-columns: 1fr; }
     .sidebar-card { position: static; }
 }
 

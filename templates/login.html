@@ -1,36 +1,96 @@
 {% extends 'base.html' %}
-{% block title %}Login | SkillRadar{% endblock %}
+{% block title %}
+    {% if login_mode == 'student' %}
+        Student Login | SkillRadar
+    {% elif login_mode == 'officer' %}
+        Officer Login | SkillRadar
+    {% else %}
+        Login | SkillRadar
+    {% endif %}
+{% endblock %}
 {% block content %}
-<section class="auth-layout">
+{% if login_mode == 'hub' %}
+<section class="auth-layout auth-hub-layout">
     <div class="hero-panel card premium-auth-hero">
         <p class="eyebrow">Campus intelligence for placements</p>
-        <h1>Track skills, benchmark readiness, and plan every placement season with confidence.</h1>
-        <p>SkillRadar helps students map their strengths and gives placement officers a clean campus-wide view of eligibility and skill health.</p>
+        <h1>Start your SkillRadar journey with the access point built for your role.</h1>
+        <p>Students can explore readiness insights and placement opportunities, while officers can coordinate drives, records, and campus placement operations.</p>
         <div class="hero-stats">
             <div>
-                <strong>8</strong>
-                <span>core skills mapped</span>
-            </div>
-            <div>
-                <strong>10</strong>
-                <span>seeded hiring companies</span>
-            </div>
-            <div>
                 <strong>2</strong>
-                <span>campus roles supported</span>
+                <span>separate access flows</span>
             </div>
-        </div>
-        <div class="hero-ribbon">
-            <span>Student Skill Mapping</span>
-            <span>Officer Visibility</span>
-            <span>Placement Readiness</span>
+            <div>
+                <strong>8</strong>
+                <span>skills benchmarked</span>
+            </div>
+            <div>
+                <strong>1</strong>
+                <span>shared placement command center</span>
+            </div>
         </div>
     </div>
 
+    <div class="auth-portal-grid">
+        <article class="card auth-portal-card">
+            <p class="eyebrow">For students</p>
+            <h2>Student login</h2>
+            <p class="muted">Access your dashboard, skill form, radar chart, and placement eligibility updates.</p>
+            <div class="auth-portal-actions">
+                <a class="button" href="{{ url_for('student_login') }}">Continue as Student</a>
+                <a class="text-link" href="{{ url_for('register') }}">Create student account</a>
+            </div>
+        </article>
+
+        <article class="card auth-portal-card">
+            <p class="eyebrow">For placement office</p>
+            <h2>Officer login</h2>
+            <p class="muted">Manage students, companies, contact settings, mentors, exports, and placement operations.</p>
+            <div class="auth-portal-actions">
+                <a class="button" href="{{ url_for('officer_login') }}">Continue as Officer</a>
+                <span class="muted small-text">Officer accounts are seeded by the system.</span>
+            </div>
+        </article>
+    </div>
+</section>
+{% else %}
+<section class="auth-layout">
+    <div class="hero-panel card premium-auth-hero">
+        {% if login_mode == 'student' %}
+            <p class="eyebrow">Student access</p>
+            <h1>Step into your placement dashboard and see how close you are to industry readiness.</h1>
+            <p>Use the student portal to track skills, compare against benchmarks, and prepare smarter for upcoming drives.</p>
+            <div class="hero-ribbon">
+                <span>Skill Form</span>
+                <span>Radar Analysis</span>
+                <span>Placement Eligibility</span>
+            </div>
+        {% else %}
+            <p class="eyebrow">Officer access</p>
+            <h1>Open the placement operations console and manage campus recruitment with clarity.</h1>
+            <p>Use the officer portal to oversee student readiness, company drives, exports, mentors, and official contact details.</p>
+            <div class="hero-ribbon">
+                <span>Student Oversight</span>
+                <span>Drive Management</span>
+                <span>CSV Export</span>
+            </div>
+        {% endif %}
+    </div>
+
     <form class="card auth-card premium-auth-card" method="POST" data-validate>
-        <p class="eyebrow">Welcome back</p>
-        <h2>Sign in to SkillRadar</h2>
-        <p class="muted">Access your academic placement command center and continue from where you left off.</p>
+        <p class="eyebrow">
+            {% if login_mode == 'student' %}Student sign in{% else %}Officer sign in{% endif %}
+        </p>
+        <h2>
+            {% if login_mode == 'student' %}Login to the student portal{% else %}Login to the officer portal{% endif %}
+        </h2>
+        <p class="muted">
+            {% if login_mode == 'student' %}
+                Continue to your skill dashboard, placement hub, and readiness insights.
+            {% else %}
+                Continue to the placement operations workspace and officer controls.
+            {% endif %}
+        </p>
         <label>Email
             <input type="email" name="email" placeholder="you@campus.edu" required>
             <span class="field-error" data-error-for="email"></span>
@@ -39,9 +99,20 @@
             <input type="password" name="password" placeholder="Enter your password" required>
             <span class="field-error" data-error-for="password"></span>
         </label>
-        <button class="button auth-submit" type="submit">Login</button>
-        <p class="muted">Students can create an account. Placement officers use the seeded officer login.</p>
-        <p class="inline-link">New student? <a href="{{ url_for('register') }}">Create your account</a></p>
+        <button class="button auth-submit" type="submit">
+            {% if login_mode == 'student' %}Login as Student{% else %}Login as Officer{% endif %}
+        </button>
+        <div class="auth-switcher">
+            {% if login_mode == 'student' %}
+                <p class="inline-link">Need officer access? <a href="{{ url_for('officer_login') }}">Use officer login</a></p>
+                <p class="inline-link">New student? <a href="{{ url_for('register') }}">Create your account</a></p>
+            {% else %}
+                <p class="inline-link">Need student access? <a href="{{ url_for('student_login') }}">Use student login</a></p>
+                <p class="muted small-text">Officer accounts are created by the placement office workflow.</p>
+            {% endif %}
+            <p class="inline-link"><a href="{{ url_for('login') }}">Back to portal selection</a></p>
+        </div>
     </form>
 </section>
+{% endif %}
 {% endblock %}

@@ -67,9 +67,9 @@
                     </div>
                     {% if current_user.role == 'student' %}
                         {% if current_user.cgpa >= company.min_cgpa %}
-                            <span class="status-pill eligible">Eligible ✓</span>
+                            <span class="status-pill eligible">Eligible</span>
                         {% else %}
-                            <span class="status-pill ineligible">Not Eligible ✗</span>
+                            <span class="status-pill ineligible">Not Eligible</span>
                         {% endif %}
                     {% endif %}
                 </div>

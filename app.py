@@ -116,8 +116,7 @@ def create_app():
             return redirect(url_for("officer_panel" if current_user.role == "officer" else "dashboard"))
         return redirect(url_for("login"))
 
-    @app.route("/login", methods=["GET", "POST"])
-    def login():
+    def handle_login(expected_role=None):
         if current_user.is_authenticated:
             return redirect(url_for("home"))
 
@@ -126,12 +125,37 @@ def create_app():
             password = request.form.get("password", "")
             user = verify_user(app, email, password)
             if user:
+                if expected_role and user.role != expected_role:
+                    flash(f"This login is only for {expected_role}s. Please use the correct portal.", "danger")
+                    return False
                 login_user(user)
                 flash("Welcome back to SkillRadar.", "success")
                 return redirect(url_for("officer_panel" if user.role == "officer" else "dashboard"))
             flash("Invalid email or password.", "danger")
+        return None
 
-        return render_template("login.html")
+    @app.route("/login")
+    def login():
+        if current_user.is_authenticated:
+            return redirect(url_for("home"))
+
+        return render_template("login.html", login_mode="hub")
+
+    @app.route("/login/student", methods=["GET", "POST"])
+    def student_login():
+        login_result = handle_login("student")
+        if login_result:
+            return login_result
+
+        return render_template("login.html", login_mode="student")
+
+    @app.route("/login/officer", methods=["GET", "POST"])
+    def officer_login():
+        login_result = handle_login("officer")
+        if login_result:
+            return login_result
+
+        return render_template("login.html", login_mode="officer")
 
     @app.route("/register", methods=["GET", "POST"])
     def register():
@@ -163,7 +187,7 @@ def create_app():
 
             create_student(app, form["name"], form["email"].lower(), password, cgpa, form["roll_number"], form["department"])
             flash("Registration successful. Please log in.", "success")
-            return redirect(url_for("login"))
+            return redirect(url_for("student_login"))
 
         return render_template("register.html", form=form)
 
@@ -224,7 +248,7 @@ def create_app():
         logout_user()
         delete_user(app, user_id)
         flash("Your student account has been deleted.", "info")
-        return redirect(url_for("login"))
+        return redirect(url_for("student_login"))
 
     @app.route("/skill_form", methods=["GET", "POST"])
     @login_required
