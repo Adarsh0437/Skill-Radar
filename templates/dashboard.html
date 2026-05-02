@@ -12,11 +12,11 @@
         </div>
         <div class="sidebar-stat">
             <span>Average score</span>
-            <strong>{{ skill_avg }}/10</strong>
+            <strong>{% if has_skill_profile %}{{ skill_avg }}/10{% else %}Pending{% endif %}</strong>
         </div>
         <div class="sidebar-stat">
             <span>Current gap</span>
-            <strong>{{ overall_gap }}%</strong>
+            <strong>{% if has_skill_profile %}{{ overall_gap }}%{% else %}Pending{% endif %}</strong>
         </div>
         <div class="quick-links">
             <a href="{{ url_for('skill_form') }}">Update skill ratings</a>
@@ -29,12 +29,16 @@
         <section class="card premium-surface">
             <p class="eyebrow">Overview</p>
             <h1>Placement readiness, one glance at a time</h1>
-            <p>Your current skills are being benchmarked against common industry expectations so you can focus your practice where it matters most.</p>
+            {% if has_skill_profile %}
+                <p>Your current skills are being benchmarked against common industry expectations so you can focus your practice where it matters most.</p>
+            {% else %}
+                <p>Complete your skill form once to unlock benchmark comparisons, focus areas, and more accurate readiness insights.</p>
+            {% endif %}
             <div class="summary-grid">
                 {% for field, value in skills.items() if field in ['python', 'sql', 'java', 'dsa', 'communication', 'problem_solving', 'web_dev', 'ml'] %}
                     <div class="summary-card">
                         <span>{{ field.replace('_', ' ')|title }}</span>
-                        <strong>{{ value }}/10</strong>
+                        <strong>{% if has_skill_profile %}{{ value }}/10{% else %}Not rated{% endif %}</strong>
                     </div>
                 {% endfor %}
             </div>
@@ -44,7 +48,9 @@
             <p class="eyebrow">Focus areas</p>
             <h2>Priority actions</h2>
             <div class="focus-list">
-                {% if top_focus %}
+                {% if not has_skill_profile %}
+                    <div class="focus-item">Complete your skill ratings first to generate personalized focus areas.</div>
+                {% elif top_focus %}
                     {% for skill in top_focus %}
                         <div class="focus-item">{{ skill }}</div>
                     {% endfor %}

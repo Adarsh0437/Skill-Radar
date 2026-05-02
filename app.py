@@ -206,10 +206,23 @@ def create_app():
     def dashboard():
         skills = get_student_skill_record(app, current_user.id)
         saved_scores = [int(skills[field]) for field in SKILL_FIELDS]
+        has_skill_profile = skills.get("updated_at") is not None
         completion = round((sum(1 for score in saved_scores if score > 1) / len(SKILL_FIELDS)) * 100)
-        skill_avg = round(sum(saved_scores) / len(saved_scores), 2)
-        _, overall_gap, top_focus = calculate_gap(skills, INDUSTRY_STANDARDS)
-        return render_template("dashboard.html", skills=skills, skill_avg=skill_avg, completion=completion, overall_gap=overall_gap, top_focus=top_focus)
+        skill_avg = round(sum(saved_scores) / len(saved_scores), 2) if has_skill_profile else None
+        if has_skill_profile:
+            _, overall_gap, top_focus = calculate_gap(skills, INDUSTRY_STANDARDS)
+        else:
+            overall_gap = None
+            top_focus = []
+        return render_template(
+            "dashboard.html",
+            skills=skills,
+            skill_avg=skill_avg,
+            completion=completion,
+            overall_gap=overall_gap,
+            top_focus=top_focus,
+            has_skill_profile=has_skill_profile,
+        )
 
     @app.route("/student/profile", methods=["POST"])
     @login_required
@@ -280,6 +293,9 @@ def create_app():
     @role_required("student")
     def visualize():
         skills = get_student_skill_record(app, current_user.id)
+        if skills.get("updated_at") is None:
+            flash("Complete your skill form first to unlock the radar chart and gap analysis.", "info")
+            return redirect(url_for("skill_form"))
         per_skill_gap, overall_gap, top_focus = calculate_gap(skills, INDUSTRY_STANDARDS)
         student_chart = [int(skills[field]) for field in SKILL_FIELDS]
         industry_chart = [INDUSTRY_STANDARDS[field] for field in SKILL_FIELDS]
@@ -554,6 +570,8 @@ def create_app():
     @role_required("student")
     def chart_data():
         skills = get_student_skill_record(app, current_user.id)
+        if skills.get("updated_at") is None:
+            return jsonify({"error": "Skill profile not created yet."}), 400
         return jsonify({
             "labels": [SKILL_LABELS[field] for field in SKILL_FIELDS],
             "student": [int(skills[field]) for field in SKILL_FIELDS],
