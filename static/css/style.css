@@ -317,6 +317,47 @@ button.button {
     font-size: 0.9rem;
 }
 
+.auth-hero-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.auth-hero-summary span {
+    padding: 0.65rem 0.95rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #eef3ff;
+    font-size: 0.9rem;
+}
+
+.auth-hero-notes {
+    display: grid;
+    gap: 0.85rem;
+    margin-top: 1.6rem;
+}
+
+.auth-hero-note {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.95rem 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.auth-hero-note strong {
+    font-size: 1rem;
+    color: #fff3ca;
+}
+
+.auth-hero-note span {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
 .auth-card, .form-card { display: grid; gap: 1rem; align-content: start; }
 .premium-auth-card,
 .premium-register-card {
@@ -774,6 +815,12 @@ input:focus, select:focus {
     overflow: hidden;
 }
 
+.officer-account-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem;
+}
+
 .officer-profile-card::before,
 .premium-table-card::before {
     content: "";
@@ -783,6 +830,30 @@ input:focus, select:focus {
     height: 140px;
     background: radial-gradient(circle, rgba(240, 192, 64, 0.12), transparent 68%);
     pointer-events: none;
+}
+
+.officer-directory {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.officer-directory-card {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.officer-directory-card strong {
+    color: #fff3ca;
+    font-size: 1rem;
+}
+
+.officer-directory-card span {
+    color: var(--muted);
 }
 
 .table-wrap { overflow-x: auto; }
@@ -882,6 +953,7 @@ tbody tr:hover {
 
 @media (max-width: 920px) {
     .auth-layout, .dashboard-layout, .auth-hub-layout { grid-template-columns: 1fr; }
+    .officer-account-grid { grid-template-columns: 1fr; }
     .sidebar-card { position: static; }
 }
 

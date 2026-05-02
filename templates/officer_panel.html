@@ -57,26 +57,70 @@
         <button class="button filter-submit" type="submit">Apply Filters</button>
     </form>
 
+    <div class="officer-account-grid">
+        <section class="card officer-profile-card">
+            <p class="eyebrow">Officer account</p>
+            <h2>Update officer details</h2>
+            <form class="form-grid" method="POST" action="{{ url_for('update_officer_details') }}" data-validate>
+                <label>Name
+                    <input type="text" name="name" value="{{ current_user.name }}" required>
+                    <span class="field-error" data-error-for="name"></span>
+                </label>
+                <label>Email
+                    <input type="email" name="email" value="{{ current_user.email }}" required>
+                    <span class="field-error" data-error-for="email"></span>
+                </label>
+                <label class="full-span">New Password
+                    <input type="password" name="password" placeholder="Leave blank to keep current password">
+                    <span class="field-error" data-error-for="password"></span>
+                </label>
+                <div class="action-row full-span">
+                    <button class="button" type="submit">Update Officer Details</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card officer-profile-card">
+            <p class="eyebrow">Officer access</p>
+            <h2>Add new officer</h2>
+            <form class="form-grid" method="POST" action="{{ url_for('create_officer_account') }}" data-validate>
+                <label>Name
+                    <input type="text" name="name" placeholder="Officer name" required>
+                    <span class="field-error" data-error-for="name"></span>
+                </label>
+                <label>Email
+                    <input type="email" name="email" placeholder="officer@campus.edu" required>
+                    <span class="field-error" data-error-for="email"></span>
+                </label>
+                <label>Department
+                    <input type="text" name="department" value="Placement Cell" required>
+                    <span class="field-error" data-error-for="department"></span>
+                </label>
+                <label>Temporary Password
+                    <input type="password" name="password" placeholder="Set initial password" required>
+                    <span class="field-error" data-error-for="password"></span>
+                </label>
+                <div class="action-row full-span">
+                    <button class="button" type="submit">Create Officer Account</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
     <section class="card officer-profile-card">
-        <p class="eyebrow">Officer account</p>
-        <h2>Update officer details</h2>
-        <form class="form-grid" method="POST" action="{{ url_for('update_officer_details') }}" data-validate>
-            <label>Name
-                <input type="text" name="name" value="{{ current_user.name }}" required>
-                <span class="field-error" data-error-for="name"></span>
-            </label>
-            <label>Email
-                <input type="email" name="email" value="{{ current_user.email }}" required>
-                <span class="field-error" data-error-for="email"></span>
-            </label>
-            <label class="full-span">New Password
-                <input type="password" name="password" placeholder="Leave blank to keep current password">
-                <span class="field-error" data-error-for="password"></span>
-            </label>
-            <div class="action-row full-span">
-                <button class="button" type="submit">Update Officer Details</button>
-            </div>
-        </form>
+        <p class="eyebrow">Officer directory</p>
+        <h2>Current officer accounts</h2>
+        <div class="officer-directory">
+            {% for officer in officers %}
+                <article class="officer-directory-card">
+                    <strong>{{ officer.name }}</strong>
+                    <span>{{ officer.email }}</span>
+                    <span>{{ officer.department or 'Placement Cell' }}</span>
+                </article>
+            {% else %}
+                <p class="muted">No officer accounts found.</p>
+            {% endfor %}
+        </div>
     </section>
 
     <div class="card table-card premium-table-card">

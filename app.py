@@ -12,6 +12,7 @@ from models import (
     add_alumni_mentor,
     count_companies,
     count_students,
+    create_officer,
     create_student,
     delete_alumni_mentor,
     delete_company,
@@ -19,6 +20,7 @@ from models import (
     email_exists,
     get_all_companies,
     get_all_alumni_mentors,
+    get_all_officers,
     get_company_by_id,
     get_contact_settings,
     get_departments,
@@ -421,6 +423,7 @@ def create_app():
         return render_template(
             "officer_panel.html",
             students=students,
+            officers=get_all_officers(app),
             departments=get_departments(app),
             selected_department=department,
             min_cgpa=min_cgpa,
@@ -478,6 +481,27 @@ def create_app():
         if password:
             update_user_password(app, current_user.id, password)
         flash("Officer details updated successfully.", "success")
+        return redirect(url_for("officer_panel"))
+
+    @app.route("/officer/create", methods=["POST"])
+    @login_required
+    @role_required("officer")
+    def create_officer_account():
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "").strip()
+        department = request.form.get("department", "").strip() or "Placement Cell"
+
+        if not name or not email or not password:
+            flash("Name, email, and password are required to add a new officer.", "danger")
+            return redirect(url_for("officer_panel"))
+
+        if email_exists(app, email):
+            flash("That email is already used by another account.", "danger")
+            return redirect(url_for("officer_panel"))
+
+        create_officer(app, name, email, password, department)
+        flash("New officer account created successfully.", "success")
         return redirect(url_for("officer_panel"))
 
     @app.route("/officer/student/<int:user_id>/update", methods=["POST"])

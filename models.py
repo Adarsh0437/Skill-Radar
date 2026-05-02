@@ -198,6 +198,27 @@ def create_student(app, name, email, password, cgpa, roll_number, department):
     return execute_query(app, query, (name, email, password_hash, cgpa, roll_number, department))
 
 
+def create_officer(app, name, email, password, department="Placement Cell"):
+    password_hash = generate_password_hash(password)
+    query = """
+        INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department)
+        VALUES (%s, %s, %s, 'officer', NULL, NULL, %s)
+    """
+    return execute_query(app, query, (name, email, password_hash, department))
+
+
+def get_all_officers(app):
+    return fetch_all(
+        app,
+        """
+        SELECT id, name, email, department, created_at
+        FROM users
+        WHERE role = 'officer'
+        ORDER BY created_at ASC, name ASC
+        """,
+    )
+
+
 def email_exists(app, email, exclude_user_id=None):
     query = "SELECT id FROM users WHERE email = %s"
     params = [email]
