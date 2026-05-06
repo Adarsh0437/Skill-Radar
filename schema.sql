@@ -11,6 +11,7 @@ CREATE TABLE users (
     cgpa DECIMAL(3,2) DEFAULT NULL,
     roll_number VARCHAR(50) DEFAULT NULL UNIQUE,
     department VARCHAR(100) DEFAULT NULL,
+    passout_year INT(4) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -48,10 +49,10 @@ CREATE TABLE companies (
     prep_kit_url VARCHAR(255) NOT NULL
 );
 
-INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department) VALUES
-('Placement Officer', 'officer@campus.edu', 'pbkdf2:sha256:1000000$iimWEQP95PmXt2n2$ce646592abafb6e74dbe64189e97af042bb0f61f1d69713d34b184d9a5496c14', 'officer', NULL, NULL, 'Placement Cell'),
-('Aarav Sharma', 'student1@campus.edu', 'pbkdf2:sha256:1000000$BGmmDuEgEGjPLh9p$ee26c50dce042de9df7e437ba20aff8e7e457a6cad9ccbad5b4a620a4640712e', 'student', 8.20, 'CSE2024001', 'Computer Science'),
-('Diya Nair', 'student2@campus.edu', 'pbkdf2:sha256:1000000$p719kLegrkRD3hxM$bc6c6896bb5a270709cdd3695bc8c93c6f6242f962b414fbb05433e3b74911c3', 'student', 7.40, 'ECE2024007', 'Electronics');
+INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department, passout_year) VALUES
+('Placement Officer', 'officer@campus.edu', 'pbkdf2:sha256:1000000$iimWEQP95PmXt2n2$ce646592abafb6e74dbe64189e97af042bb0f61f1d69713d34b184d9a5496c14', 'officer', NULL, NULL, 'Placement Cell', NULL),
+('Aarav Sharma', 'student1@campus.edu', 'pbkdf2:sha256:1000000$BGmmDuEgEGjPLh9p$ee26c50dce042de9df7e437ba20aff8e7e457a6cad9ccbad5b4a620a4640712e', 'student', 8.20, 'CSE2024001', 'Computer Science', 2024),
+('Diya Nair', 'student2@campus.edu', 'pbkdf2:sha256:1000000$p719kLegrkRD3hxM$bc6c6896bb5a270709cdd3695bc8c93c6f6242f962b414fbb05433e3b74911c3', 'student', 7.40, 'ECE2024007', 'Electronics', 2024');
 
 INSERT INTO skills (user_id, python, `sql`, java, dsa, communication, problem_solving, web_dev, ml) VALUES
 (2, 7, 6, 5, 7, 8, 7, 6, 5),

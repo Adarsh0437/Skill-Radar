@@ -28,6 +28,7 @@ class User(UserMixin):
         self.cgpa = record["cgpa"]
         self.roll_number = record["roll_number"]
         self.department = record["department"]
+        self.passout_year = record.get("passout_year")
         self.created_at = record["created_at"]
 
 
@@ -192,19 +193,19 @@ def delete_alumni_mentor(app, mentor_id):
 def create_student(app, name, email, password, cgpa, roll_number, department):
     password_hash = generate_password_hash(password)
     query = """
-        INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department)
-        VALUES (%s, %s, %s, 'student', %s, %s, %s)
+        INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department, passout_year)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    return execute_query(app, query, (name, email, password_hash, cgpa, roll_number, department))
+    return execute_query(app, query, (name, email, password_hash, 'student', cgpa, roll_number, department, None))
 
 
 def create_officer(app, name, email, password, department="Placement Cell"):
     password_hash = generate_password_hash(password)
     query = """
-        INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department)
-        VALUES (%s, %s, %s, 'officer', NULL, NULL, %s)
+        INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department, passout_year)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    return execute_query(app, query, (name, email, password_hash, department))
+    return execute_query(app, query, (name, email, password_hash, 'officer', None, None, department, None))
 
 
 def get_all_officers(app):
@@ -254,13 +255,21 @@ def verify_user(app, email, password):
     return None
 
 
-def update_user_profile(app, user_id, name, email, cgpa, roll_number, department):
-    query = """
-        UPDATE users
-        SET name = %s, email = %s, cgpa = %s, roll_number = %s, department = %s
-        WHERE id = %s
-    """
-    execute_query(app, query, (name, email, cgpa, roll_number, department, user_id))
+def update_user_profile(app, user_id, name, email, cgpa, roll_number, department, passout_year=None, update_passout_year=False):
+    if update_passout_year:
+        query = """
+            UPDATE users
+            SET name = %s, email = %s, cgpa = %s, roll_number = %s, department = %s, passout_year = %s
+            WHERE id = %s
+        """
+        execute_query(app, query, (name, email, cgpa, roll_number, department, passout_year, user_id))
+    else:
+        query = """
+            UPDATE users
+            SET name = %s, email = %s, cgpa = %s, roll_number = %s, department = %s
+            WHERE id = %s
+        """
+        execute_query(app, query, (name, email, cgpa, roll_number, department, user_id))
 
 
 def update_officer_profile(app, user_id, name, email):
@@ -415,7 +424,17 @@ def delete_company(app, company_id):
     execute_query(app, "DELETE FROM companies WHERE id = %s", (company_id,))
 
 
-def get_students_with_skill_average(app, department=None, min_cgpa=None, search_term=None, limit=None, offset=0):
+def get_students_with_skill_average(
+    app,
+    department=None,
+    min_cgpa=None,
+    search_term=None,
+    skill_name=None,
+    min_skill_score=None,
+    passout_year=None,
+    limit=None,
+    offset=0,
+):
     conditions = ["u.role = 'student'"]
     params = []
     if department:
@@ -428,6 +447,15 @@ def get_students_with_skill_average(app, department=None, min_cgpa=None, search_
         conditions.append("(u.name LIKE %s OR u.roll_number LIKE %s OR u.email LIKE %s)")
         search_like = f"%{search_term}%"
         params.extend([search_like, search_like, search_like])
+    if skill_name and skill_name in SKILL_FIELDS:
+        if min_skill_score not in (None, ""):
+            conditions.append(f"COALESCE(s.`{skill_name}`, 0) >= %s")
+            params.append(min_skill_score)
+        else:
+            conditions.append(f"COALESCE(s.`{skill_name}`, 0) > 1")
+    if passout_year:
+        conditions.append("u.passout_year = %s")
+        params.append(passout_year)
 
     query = f"""
         SELECT
@@ -436,7 +464,16 @@ def get_students_with_skill_average(app, department=None, min_cgpa=None, search_
             u.email,
             u.roll_number,
             u.department,
+            u.passout_year,
             u.cgpa,
+            COALESCE(s.python, 0) AS python,
+            COALESCE(s.`sql`, 0) AS `sql`,
+            COALESCE(s.java, 0) AS java,
+            COALESCE(s.dsa, 0) AS dsa,
+            COALESCE(s.communication, 0) AS communication,
+            COALESCE(s.problem_solving, 0) AS problem_solving,
+            COALESCE(s.web_dev, 0) AS web_dev,
+            COALESCE(s.ml, 0) AS ml,
             ROUND((
                 COALESCE(s.python, 0) +
                 COALESCE(s.`sql`, 0) +
@@ -458,21 +495,42 @@ def get_students_with_skill_average(app, department=None, min_cgpa=None, search_
     return fetch_all(app, query, params)
 
 
-def count_students(app, department=None, min_cgpa=None, search_term=None):
-    conditions = ["role = 'student'"]
+def count_students(
+    app,
+    department=None,
+    min_cgpa=None,
+    search_term=None,
+    skill_name=None,
+    min_skill_score=None,
+    passout_year=None,
+):
+    conditions = ["u.role = 'student'"]
     params = []
     if department:
-        conditions.append("department = %s")
+        conditions.append("u.department = %s")
         params.append(department)
     if min_cgpa not in (None, ""):
-        conditions.append("cgpa >= %s")
+        conditions.append("u.cgpa >= %s")
         params.append(min_cgpa)
     if search_term:
-        conditions.append("(name LIKE %s OR roll_number LIKE %s OR email LIKE %s)")
+        conditions.append("(u.name LIKE %s OR u.roll_number LIKE %s OR u.email LIKE %s)")
         search_like = f"%{search_term}%"
         params.extend([search_like, search_like, search_like])
+    if skill_name and skill_name in SKILL_FIELDS:
+        if min_skill_score not in (None, ""):
+            conditions.append(f"COALESCE(s.`{skill_name}`, 0) >= %s")
+            params.append(min_skill_score)
+        else:
+            conditions.append(f"COALESCE(s.`{skill_name}`, 0) > 1")
+    if passout_year:
+        conditions.append("u.passout_year = %s")
+        params.append(passout_year)
 
-    row = fetch_one(app, f"SELECT COUNT(*) AS total FROM users WHERE {' AND '.join(conditions)}", params)
+    row = fetch_one(
+        app,
+        f"SELECT COUNT(*) AS total FROM users u LEFT JOIN skills s ON s.user_id = u.id WHERE {' AND '.join(conditions)}",
+        params,
+    )
     return row["total"] if row else 0
 
 

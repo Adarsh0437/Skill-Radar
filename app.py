@@ -100,6 +100,17 @@ def create_app():
         except (TypeError, ValueError):
             return 1
 
+    def parse_int(raw_value, min_value=None, max_value=None):
+        try:
+            value = int(raw_value)
+            if min_value is not None and value < min_value:
+                return None
+            if max_value is not None and value > max_value:
+                return None
+            return value
+        except (TypeError, ValueError):
+            return None
+
     login_manager = LoginManager()
     login_manager.login_view = "login"
     login_manager.init_app(app)
@@ -430,12 +441,37 @@ def create_app():
         department = request.args.get("department", "").strip()
         min_cgpa = request.args.get("min_cgpa", "").strip()
         student_search = request.args.get("q", "").strip()
+        skill_name = request.args.get("skill", "").strip()
+        min_skill_score = parse_int(request.args.get("min_skill_score", ""), 0, 10)
+        passout_year = request.args.get("passout_year", "").strip()
         page = parse_page(request.args.get("page", 1))
-        total_students = count_students(app, department or None, min_cgpa or None, student_search or None)
+        total_students = count_students(
+            app,
+            department or None,
+            min_cgpa or None,
+            student_search or None,
+            skill_name or None,
+            min_skill_score,
+            passout_year or None,
+        )
         total_pages = max(1, (total_students + STUDENTS_PER_PAGE - 1) // STUDENTS_PER_PAGE)
         page = min(page, total_pages)
         offset = (page - 1) * STUDENTS_PER_PAGE
-        students = get_students_with_skill_average(app, department or None, min_cgpa or None, student_search or None, STUDENTS_PER_PAGE, offset)
+        students = get_students_with_skill_average(
+            app,
+            department or None,
+            min_cgpa or None,
+            student_search or None,
+            skill_name or None,
+            min_skill_score,
+            passout_year or None,
+            STUDENTS_PER_PAGE,
+            offset,
+        )
+        for student in students:
+            student["selected_skill_score"] = (
+                student.get(skill_name, 0) if skill_name in SKILL_FIELDS else None
+            )
         return render_template(
             "officer_panel.html",
             students=students,
@@ -444,6 +480,10 @@ def create_app():
             selected_department=department,
             min_cgpa=min_cgpa,
             student_search=student_search,
+            selected_skill=skill_name,
+            min_skill_score=min_skill_score,
+            passout_year=passout_year,
+            skill_labels=SKILL_LABELS,
             student_page=page,
             student_total_pages=total_pages,
         )
@@ -455,11 +495,22 @@ def create_app():
         department = request.args.get("department", "").strip()
         min_cgpa = request.args.get("min_cgpa", "").strip()
         student_search = request.args.get("q", "").strip()
-        students = get_students_with_skill_average(app, department or None, min_cgpa or None, student_search or None)
+        skill_name = request.args.get("skill", "").strip()
+        min_skill_score = parse_int(request.args.get("min_skill_score", ""), 0, 10)
+        passout_year = request.args.get("passout_year", "").strip()
+        students = get_students_with_skill_average(
+            app,
+            department or None,
+            min_cgpa or None,
+            student_search or None,
+            skill_name or None,
+            min_skill_score,
+            passout_year or None,
+        )
 
         output = StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Name", "Email", "Roll Number", "Department", "CGPA", "Skill Avg Score"])
+        writer.writerow(["Name", "Email", "Roll Number", "Department", "CGPA", "Passout Year", "Skill Avg Score"])
         for student in students:
             writer.writerow([
                 student["name"],
@@ -467,6 +518,7 @@ def create_app():
                 student["roll_number"],
                 student["department"],
                 student["cgpa"],
+                student.get("passout_year") or "",
                 student["skill_avg"] or 0,
             ])
 
@@ -529,8 +581,8 @@ def create_app():
             flash("Student record not found.", "danger")
             return redirect(url_for("officer_panel"))
 
-        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department"]}
-        if not all(form.values()):
+        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department", "passout_year"]}
+        if not all([form["name"], form["email"], form["cgpa"], form["roll_number"], form["department"]]):
             flash("Please complete all student fields before updating.", "danger")
             return redirect(url_for("officer_panel"))
 
@@ -548,7 +600,17 @@ def create_app():
             flash(str(error), "danger")
             return redirect(url_for("officer_panel"))
 
-        update_user_profile(app, user_id, form["name"], form["email"].lower(), cgpa, form["roll_number"], form["department"])
+        update_user_profile(
+            app,
+            user_id,
+            form["name"],
+            form["email"].lower(),
+            cgpa,
+            form["roll_number"],
+            form["department"],
+            form["passout_year"] or None,
+            update_passout_year=True,
+        )
         flash("Student record updated successfully.", "success")
         return redirect(url_for("officer_panel"))
 

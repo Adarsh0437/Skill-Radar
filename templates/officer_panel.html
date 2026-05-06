@@ -9,7 +9,7 @@
         </div>
         <a
             class="button secondary-button"
-            href="{{ url_for('export_officer_csv', department=selected_department, min_cgpa=min_cgpa, q=student_search) }}"
+            href="{{ url_for('export_officer_csv', department=selected_department, min_cgpa=min_cgpa, q=student_search, skill=selected_skill, min_skill_score=min_skill_score, passout_year=passout_year) }}"
         >
             Export CSV
         </a>
@@ -51,10 +51,30 @@
             </div>
         </label>
         <label class="filter-field">
+            Skill
+            <select name="skill">
+                <option value="">All Skills</option>
+                {% for key, label in skill_labels.items() %}
+                    <option value="{{ key }}" {% if selected_skill == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="filter-field">
+            Min Skill Score
+            <input type="number" min="1" max="10" name="min_skill_score" value="{{ min_skill_score or '' }}">
+        </label>
+        <label class="filter-field">
+            Passout Year
+            <input type="number" name="passout_year" min="2000" max="2100" value="{{ passout_year }}" placeholder="2024">
+        </label>
+        <label class="filter-field">
             Min CGPA
             <input type="number" step="0.01" min="0" max="10" name="min_cgpa" value="{{ min_cgpa }}">
         </label>
-        <button class="button filter-submit" type="submit">Apply Filters</button>
+        <div class="filter-actions">
+            <button class="button filter-submit" type="submit">Apply Filters</button>
+            <a class="button secondary-button" href="{{ url_for('officer_panel') }}">Reset Filters</a>
+        </div>
     </form>
 
     <div class="officer-account-grid">
@@ -131,8 +151,12 @@
                         <th>Name</th>
                         <th>Roll No</th>
                         <th>Department</th>
+                        <th>Passout Year</th>
                         <th>CGPA</th>
                         <th>Skill Avg Score</th>
+                        {% if selected_skill %}
+                            <th>{{ skill_labels.get(selected_skill, 'Skill') }} Score</th>
+                        {% endif %}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -142,8 +166,12 @@
                             <td>{{ student.name }}</td>
                             <td>{{ student.roll_number }}</td>
                             <td>{{ student.department }}</td>
+                            <td>{{ student.passout_year or 'N/A' }}</td>
                             <td>{{ student.cgpa }}</td>
                             <td>{{ student.skill_avg or 0 }}</td>
+                            {% if selected_skill %}
+                                <td>{{ student.selected_skill_score if student.selected_skill_score is not none else 'N/A' }}</td>
+                            {% endif %}
                             <td>
                                 <details class="inline-editor">
                                     <summary>Edit</summary>
@@ -160,6 +188,9 @@
                                         <label>Roll Number
                                             <input type="text" name="roll_number" value="{{ student.roll_number }}" required>
                                         </label>
+                                        <label>Passout Year
+                                            <input type="number" name="passout_year" min="2000" max="2100" value="{{ student.passout_year or '' }}">
+                                        </label>
                                         <label class="full-span">Department
                                             <input type="text" name="department" value="{{ student.department }}" required>
                                         </label>
@@ -175,7 +206,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="6">No students match the selected filters.</td>
+                            <td colspan="{{ 8 if selected_skill else 7 }}">No students match the selected filters.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -185,14 +216,14 @@
             <div class="pagination-bar">
                 <a
                     class="button secondary-button pagination-button {% if student_page == 1 %}is-disabled{% endif %}"
-                    href="{{ url_for('officer_panel', page=student_page-1, department=selected_department, min_cgpa=min_cgpa, q=student_search) if student_page > 1 else '#' }}"
+                    href="{{ url_for('officer_panel', page=student_page-1, department=selected_department, min_cgpa=min_cgpa, q=student_search, skill=selected_skill, min_skill_score=min_skill_score, passout_year=passout_year) if student_page > 1 else '#' }}"
                 >
                     Previous
                 </a>
                 <span class="pagination-status">Page {{ student_page }} of {{ student_total_pages }}</span>
                 <a
                     class="button secondary-button pagination-button {% if student_page == student_total_pages %}is-disabled{% endif %}"
-                    href="{{ url_for('officer_panel', page=student_page+1, department=selected_department, min_cgpa=min_cgpa, q=student_search) if student_page < student_total_pages else '#' }}"
+                    href="{{ url_for('officer_panel', page=student_page+1, department=selected_department, min_cgpa=min_cgpa, q=student_search, skill=selected_skill, min_skill_score=min_skill_score, passout_year=passout_year) if student_page < student_total_pages else '#' }}"
                 >
                     Next
                 </a>
