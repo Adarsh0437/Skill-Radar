@@ -18,6 +18,7 @@ from models import (
     delete_company,
     delete_user,
     email_exists,
+    ensure_schema,
     get_all_companies,
     get_all_alumni_mentors,
     get_all_officers,
@@ -114,6 +115,9 @@ def create_app():
     login_manager = LoginManager()
     login_manager.login_view = "login"
     login_manager.init_app(app)
+
+    # Ensure schema is initialized
+    ensure_schema(app)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -643,6 +647,13 @@ def create_app():
     @app.errorhandler(403)
     def forbidden(_error):
         return render_template("base.html", error_message="You do not have access to this page."), 403
+
+    @app.errorhandler(500)
+    def internal_server_error(_error):
+        return render_template(
+            "base.html",
+            error_message="Something went wrong on the server. Please contact the administrator or try again later.",
+        ), 500
 
     return app
 
