@@ -84,7 +84,6 @@ smart_campus/
 ├── config.py
 ├── models.py
 ├── requirements.txt
-├── schema.sql
 ├── static/
 │   ├── css/
 │   │   └── style.css
@@ -172,32 +171,21 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 4. Create the MySQL database
+### 4. Run the app
 
-```sql
-CREATE DATABASE smart_campus;
-```
-
-Then run `schema.sql` on that database.
-
-### 5. Configure database credentials
-
-Edit `config.py` or set environment variables:
-
-- `DB_HOST`
-- `DB_PORT`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_NAME`
-- `SECRET_KEY`
-
-### 6. Run the app
+The app uses SQLite and creates the database automatically on first run.
 
 ```bash
 flask --app app run
 ```
 
-Open:
+Open: http://127.0.0.1:5000
+
+### Default Accounts
+
+- **Officer**: `officer@campus.edu` / `admin123`
+- **Student 1**: `student1@campus.edu` / `pass123`
+- **Student 2**: `student2@campus.edu` / `pass123`
 
 ```text
 http://127.0.0.1:5000
