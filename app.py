@@ -196,13 +196,21 @@ def create_app():
                 flash("An account with this email already exists.", "danger")
                 return render_template("register.html", form=form)
 
+            if roll_number_exists(app, form["roll_number"]):
+                flash("An account with this roll number already exists.", "danger")
+                return render_template("register.html", form=form)
+
             try:
                 cgpa = parse_cgpa(form["cgpa"])
             except ValueError as error:
                 flash(str(error), "danger")
                 return render_template("register.html", form=form)
 
-            create_student(app, form["name"], form["email"].lower(), password, cgpa, form["roll_number"], form["department"])
+            try:
+                create_student(app, form["name"], form["email"].lower(), password, cgpa, form["roll_number"], form["department"])
+            except Exception:
+                flash("Unable to complete registration right now. Please verify your details and try again.", "danger")
+                return render_template("register.html", form=form)
             flash("Registration successful. Please log in.", "success")
             return redirect(url_for("student_login"))
 
@@ -572,7 +580,11 @@ def create_app():
             flash("That email is already used by another account.", "danger")
             return redirect(url_for("officer_panel"))
 
-        create_officer(app, name, email, password, department)
+        try:
+            create_officer(app, name, email, password, department)
+        except Exception:
+            flash("Unable to create officer account right now. Please verify details and try again.", "danger")
+            return redirect(url_for("officer_panel"))
         flash("New officer account created successfully.", "success")
         return redirect(url_for("officer_panel"))
 
