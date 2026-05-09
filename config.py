@@ -6,3 +6,4 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "skillradar-dev-secret")
+    DB_PATH = os.getenv("DB_PATH", "instance/skillradar.db")

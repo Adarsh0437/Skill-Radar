@@ -1,4 +1,6 @@
 import csv
+import logging
+import sqlite3
 from datetime import datetime
 from io import StringIO
 
@@ -82,6 +84,7 @@ def calculate_gap(student_skills, industry_standards):
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.logger.setLevel(logging.INFO)
     STUDENTS_PER_PAGE = 6
     COMPANIES_PER_PAGE = 6
 
@@ -111,6 +114,16 @@ def create_app():
             return value
         except (TypeError, ValueError):
             return None
+
+    def parse_passout_year(raw_value, required=False):
+        if raw_value in (None, ""):
+            if required:
+                raise ValueError("Passout year is required.")
+            return None
+        value = parse_int(raw_value, 2000, 2100)
+        if value is None:
+            raise ValueError("Passout year must be between 2000 and 2100.")
+        return value
 
     login_manager = LoginManager()
     login_manager.login_view = "login"
@@ -179,7 +192,7 @@ def create_app():
         if current_user.is_authenticated:
             return redirect(url_for("home"))
 
-        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department"]}
+        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department", "passout_year"]}
         if request.method == "POST":
             password = request.form.get("password", "")
             confirm_password = request.form.get("confirm_password", "")
@@ -202,13 +215,28 @@ def create_app():
 
             try:
                 cgpa = parse_cgpa(form["cgpa"])
+                passout_year = parse_passout_year(form["passout_year"], required=True)
             except ValueError as error:
                 flash(str(error), "danger")
                 return render_template("register.html", form=form)
 
             try:
-                create_student(app, form["name"], form["email"].lower(), password, cgpa, form["roll_number"], form["department"])
-            except Exception:
+                create_student(
+                    app,
+                    form["name"],
+                    form["email"].lower(),
+                    password,
+                    cgpa,
+                    form["roll_number"],
+                    form["department"],
+                    passout_year,
+                )
+            except sqlite3.IntegrityError as error:
+                app.logger.exception("Student registration integrity error: %s", error)
+                flash("This student could not be registered because the email or roll number already exists.", "danger")
+                return render_template("register.html", form=form)
+            except Exception as error:
+                app.logger.exception("Student registration failed: %s", error)
                 flash("Unable to complete registration right now. Please verify your details and try again.", "danger")
                 return render_template("register.html", form=form)
             flash("Registration successful. Please log in.", "success")
@@ -251,7 +279,7 @@ def create_app():
     @login_required
     @role_required("student")
     def update_student_profile():
-        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department"]}
+        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department", "passout_year"]}
         password = request.form.get("password", "").strip()
 
         if not all(form.values()):
@@ -268,11 +296,22 @@ def create_app():
 
         try:
             cgpa = parse_cgpa(form["cgpa"])
+            passout_year = parse_passout_year(form["passout_year"], required=True)
         except ValueError as error:
             flash(str(error), "danger")
             return redirect(url_for("dashboard"))
 
-        update_user_profile(app, current_user.id, form["name"], form["email"].lower(), cgpa, form["roll_number"], form["department"])
+        update_user_profile(
+            app,
+            current_user.id,
+            form["name"],
+            form["email"].lower(),
+            cgpa,
+            form["roll_number"],
+            form["department"],
+            passout_year,
+            update_passout_year=True,
+        )
         if password:
             update_user_password(app, current_user.id, password)
         flash("Student profile updated successfully.", "success")
@@ -455,7 +494,8 @@ def create_app():
         student_search = request.args.get("q", "").strip()
         skill_name = request.args.get("skill", "").strip()
         min_skill_score = parse_int(request.args.get("min_skill_score", ""), 0, 10)
-        passout_year = request.args.get("passout_year", "").strip()
+        passout_year_input = request.args.get("passout_year", "").strip()
+        passout_year = parse_int(passout_year_input, 2000, 2100)
         page = parse_page(request.args.get("page", 1))
         total_students = count_students(
             app,
@@ -464,7 +504,7 @@ def create_app():
             student_search or None,
             skill_name or None,
             min_skill_score,
-            passout_year or None,
+            passout_year,
         )
         total_pages = max(1, (total_students + STUDENTS_PER_PAGE - 1) // STUDENTS_PER_PAGE)
         page = min(page, total_pages)
@@ -476,7 +516,7 @@ def create_app():
             student_search or None,
             skill_name or None,
             min_skill_score,
-            passout_year or None,
+            passout_year,
             STUDENTS_PER_PAGE,
             offset,
         )
@@ -494,7 +534,7 @@ def create_app():
             student_search=student_search,
             selected_skill=skill_name,
             min_skill_score=min_skill_score,
-            passout_year=passout_year,
+            passout_year=passout_year_input,
             skill_labels=SKILL_LABELS,
             student_page=page,
             student_total_pages=total_pages,
@@ -509,7 +549,8 @@ def create_app():
         student_search = request.args.get("q", "").strip()
         skill_name = request.args.get("skill", "").strip()
         min_skill_score = parse_int(request.args.get("min_skill_score", ""), 0, 10)
-        passout_year = request.args.get("passout_year", "").strip()
+        passout_year_input = request.args.get("passout_year", "").strip()
+        passout_year = parse_int(passout_year_input, 2000, 2100)
         students = get_students_with_skill_average(
             app,
             department or None,
@@ -517,7 +558,7 @@ def create_app():
             student_search or None,
             skill_name or None,
             min_skill_score,
-            passout_year or None,
+            passout_year,
         )
 
         output = StringIO()
@@ -582,7 +623,12 @@ def create_app():
 
         try:
             create_officer(app, name, email, password, department)
-        except Exception:
+        except sqlite3.IntegrityError as error:
+            app.logger.exception("Officer creation integrity error: %s", error)
+            flash("This officer could not be created because the email already exists.", "danger")
+            return redirect(url_for("officer_panel"))
+        except Exception as error:
+            app.logger.exception("Officer creation failed: %s", error)
             flash("Unable to create officer account right now. Please verify details and try again.", "danger")
             return redirect(url_for("officer_panel"))
         flash("New officer account created successfully.", "success")
@@ -612,6 +658,7 @@ def create_app():
 
         try:
             cgpa = parse_cgpa(form["cgpa"])
+            passout_year = parse_passout_year(form["passout_year"], required=False)
         except ValueError as error:
             flash(str(error), "danger")
             return redirect(url_for("officer_panel"))
@@ -624,7 +671,7 @@ def create_app():
             cgpa,
             form["roll_number"],
             form["department"],
-            form["passout_year"] or None,
+            passout_year,
             update_passout_year=True,
         )
         flash("Student record updated successfully.", "success")

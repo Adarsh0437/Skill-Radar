@@ -1,7 +1,6 @@
 from functools import wraps
 import sqlite3
 import os
-from datetime import datetime
 
 from flask import abort
 from flask_login import UserMixin, current_user
@@ -22,6 +21,12 @@ SKILL_FIELDS = [
 DB_PATH = os.getenv("DB_PATH", "instance/skillradar.db")
 
 
+def resolve_db_path(app=None):
+    if app is not None and getattr(app, "config", None):
+        return app.config.get("DB_PATH", DB_PATH)
+    return DB_PATH
+
+
 class User(UserMixin):
     def __init__(self, record):
         if isinstance(record, dict):
@@ -38,7 +43,8 @@ class User(UserMixin):
 
 
 def get_connection(app=None):
-    conn = sqlite3.connect(DB_PATH)
+    db_path = resolve_db_path(app)
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -94,6 +100,13 @@ def ensure_users_table(app=None):
         )
     """
     execute_query(app, query)
+
+
+def ensure_users_columns(app=None):
+    columns = fetch_all(app, "PRAGMA table_info(users)")
+    column_names = {column["name"] for column in columns}
+    if "passout_year" not in column_names:
+        execute_query(app, "ALTER TABLE users ADD COLUMN passout_year INTEGER DEFAULT NULL")
 
 
 def ensure_skills_table(app=None):
@@ -188,8 +201,10 @@ def update_contact_settings(app, map_embed_url, office_address, phone, email):
 
 
 def ensure_schema(app=None):
-    os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
+    db_path = resolve_db_path(app)
+    os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
     ensure_users_table(app)
+    ensure_users_columns(app)
     ensure_skills_table(app)
     ensure_companies_table(app)
     ensure_contact_settings_table(app)
@@ -347,14 +362,14 @@ def delete_alumni_mentor(app, mentor_id):
     execute_query(app, "DELETE FROM alumni_mentors WHERE id = ?", (mentor_id,))
 
 
-def create_student(app, name, email, password, cgpa, roll_number, department):
+def create_student(app, name, email, password, cgpa, roll_number, department, passout_year=None):
     ensure_users_table(app)
     password_hash = generate_password_hash(password)
     query = """
         INSERT INTO users (name, email, password_hash, role, cgpa, roll_number, department, passout_year)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """
-    return execute_query(app, query, (name, email, password_hash, 'student', cgpa, roll_number, department, None))
+    return execute_query(app, query, (name, email, password_hash, 'student', cgpa, roll_number, department, passout_year))
 
 
 def create_officer(app, name, email, password, department="Placement Cell"):
