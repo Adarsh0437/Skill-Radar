@@ -80,10 +80,6 @@
                     <input type="text" name="roll_number" value="{{ current_user.roll_number }}" required>
                     <span class="field-error" data-error-for="roll_number"></span>
                 </label>
-                <label>Passout Year
-                    <input type="number" name="passout_year" min="2000" max="2100" value="{{ current_user.passout_year or '' }}" required>
-                    <span class="field-error" data-error-for="passout_year"></span>
-                </label>
                 <label class="full-span">Department
                     <input type="text" name="department" value="{{ current_user.department }}" required>
                     <span class="field-error" data-error-for="department"></span>

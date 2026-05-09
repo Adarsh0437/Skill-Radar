@@ -192,7 +192,7 @@ def create_app():
         if current_user.is_authenticated:
             return redirect(url_for("home"))
 
-        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department", "passout_year"]}
+        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department"]}
         if request.method == "POST":
             password = request.form.get("password", "")
             confirm_password = request.form.get("confirm_password", "")
@@ -215,7 +215,6 @@ def create_app():
 
             try:
                 cgpa = parse_cgpa(form["cgpa"])
-                passout_year = parse_passout_year(form["passout_year"], required=True)
             except ValueError as error:
                 flash(str(error), "danger")
                 return render_template("register.html", form=form)
@@ -229,8 +228,11 @@ def create_app():
                     cgpa,
                     form["roll_number"],
                     form["department"],
-                    passout_year,
                 )
+            except sqlite3.OperationalError as error:
+                app.logger.exception("Student registration operational error: %s", error)
+                flash("Database update failed. Restart the app once and try registration again.", "danger")
+                return render_template("register.html", form=form)
             except sqlite3.IntegrityError as error:
                 app.logger.exception("Student registration integrity error: %s", error)
                 flash("This student could not be registered because the email or roll number already exists.", "danger")
@@ -279,7 +281,7 @@ def create_app():
     @login_required
     @role_required("student")
     def update_student_profile():
-        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department", "passout_year"]}
+        form = {key: request.form.get(key, "").strip() for key in ["name", "email", "cgpa", "roll_number", "department"]}
         password = request.form.get("password", "").strip()
 
         if not all(form.values()):
@@ -296,7 +298,6 @@ def create_app():
 
         try:
             cgpa = parse_cgpa(form["cgpa"])
-            passout_year = parse_passout_year(form["passout_year"], required=True)
         except ValueError as error:
             flash(str(error), "danger")
             return redirect(url_for("dashboard"))
@@ -309,8 +310,6 @@ def create_app():
             cgpa,
             form["roll_number"],
             form["department"],
-            passout_year,
-            update_passout_year=True,
         )
         if password:
             update_user_password(app, current_user.id, password)
@@ -623,6 +622,10 @@ def create_app():
 
         try:
             create_officer(app, name, email, password, department)
+        except sqlite3.OperationalError as error:
+            app.logger.exception("Officer creation operational error: %s", error)
+            flash("Database update failed. Restart the app once and try creating the officer again.", "danger")
+            return redirect(url_for("officer_panel"))
         except sqlite3.IntegrityError as error:
             app.logger.exception("Officer creation integrity error: %s", error)
             flash("This officer could not be created because the email already exists.", "danger")
