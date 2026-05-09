@@ -1,3 +1,7 @@
+-- Legacy MySQL reference schema from the original project version.
+-- The current running application uses SQLite locally/PythonAnywhere
+-- and optional PostgreSQL when DATABASE_URL is configured.
+
 DROP TABLE IF EXISTS skills;
 DROP TABLE IF EXISTS companies;
 DROP TABLE IF EXISTS users;
@@ -18,24 +22,24 @@ CREATE TABLE users (
 CREATE TABLE skills (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
-    python TINYINT NOT NULL DEFAULT 1,
-    `sql` TINYINT NOT NULL DEFAULT 1,
-    java TINYINT NOT NULL DEFAULT 1,
-    dsa TINYINT NOT NULL DEFAULT 1,
-    communication TINYINT NOT NULL DEFAULT 1,
-    problem_solving TINYINT NOT NULL DEFAULT 1,
-    web_dev TINYINT NOT NULL DEFAULT 1,
-    ml TINYINT NOT NULL DEFAULT 1,
+    python TINYINT NOT NULL DEFAULT 0,
+    `sql` TINYINT NOT NULL DEFAULT 0,
+    java TINYINT NOT NULL DEFAULT 0,
+    dsa TINYINT NOT NULL DEFAULT 0,
+    communication TINYINT NOT NULL DEFAULT 0,
+    problem_solving TINYINT NOT NULL DEFAULT 0,
+    web_dev TINYINT NOT NULL DEFAULT 0,
+    ml TINYINT NOT NULL DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_skills_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT chk_python CHECK (python BETWEEN 1 AND 10),
-    CONSTRAINT chk_sql_skill CHECK (`sql` BETWEEN 1 AND 10),
-    CONSTRAINT chk_java CHECK (java BETWEEN 1 AND 10),
-    CONSTRAINT chk_dsa CHECK (dsa BETWEEN 1 AND 10),
-    CONSTRAINT chk_communication CHECK (communication BETWEEN 1 AND 10),
-    CONSTRAINT chk_problem_solving CHECK (problem_solving BETWEEN 1 AND 10),
-    CONSTRAINT chk_web_dev CHECK (web_dev BETWEEN 1 AND 10),
-    CONSTRAINT chk_ml CHECK (ml BETWEEN 1 AND 10)
+    CONSTRAINT chk_python CHECK (python BETWEEN 0 AND 10),
+    CONSTRAINT chk_sql_skill CHECK (`sql` BETWEEN 0 AND 10),
+    CONSTRAINT chk_java CHECK (java BETWEEN 0 AND 10),
+    CONSTRAINT chk_dsa CHECK (dsa BETWEEN 0 AND 10),
+    CONSTRAINT chk_communication CHECK (communication BETWEEN 0 AND 10),
+    CONSTRAINT chk_problem_solving CHECK (problem_solving BETWEEN 0 AND 10),
+    CONSTRAINT chk_web_dev CHECK (web_dev BETWEEN 0 AND 10),
+    CONSTRAINT chk_ml CHECK (ml BETWEEN 0 AND 10)
 );
 
 CREATE TABLE companies (

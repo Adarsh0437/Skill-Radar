@@ -54,7 +54,7 @@
 
             {% if error_message %}
                 <section class="card centered-card">
-                    <h1>Access Restricted</h1>
+                    <h1>{{ error_title or 'Notice' }}</h1>
                     <p>{{ error_message }}</p>
                     <a class="button" href="{{ url_for('home') }}">Return Home</a>
                 </section>

@@ -66,7 +66,7 @@
                         <p>{{ company.role }}</p>
                     </div>
                     {% if current_user.role == 'student' %}
-                        {% if current_user.cgpa >= company.min_cgpa %}
+                        {% if company.is_eligible %}
                             <span class="status-pill eligible">Eligible</span>
                         {% else %}
                             <span class="status-pill ineligible">Not Eligible</span>
@@ -79,6 +79,9 @@
                     <span>Drive Date: {{ company.drive_date_display }}</span>
                 </div>
                 <p><strong>Skills Required:</strong> {{ company.skills_required }}</p>
+                {% if current_user.role == 'student' %}
+                    <p class="muted"><strong>Eligibility Check:</strong> {{ company.eligibility_reason }}</p>
+                {% endif %}
                 <a class="button secondary-button" href="{{ company.prep_kit_url }}" target="_blank" rel="noopener noreferrer">Get Prep Kit</a>
 
                 {% if current_user.role == 'officer' %}

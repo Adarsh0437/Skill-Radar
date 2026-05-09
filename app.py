@@ -67,6 +67,20 @@ SKILL_LABELS = {
     "ml": "Machine Learning",
 }
 
+SKILL_ALIASES = {
+    "python": ["python"],
+    "sql": ["sql"],
+    "java": ["java"],
+    "dsa": ["dsa", "data structures", "algorithms", "data structures and algorithms"],
+    "communication": ["communication", "verbal", "soft skills"],
+    "problem_solving": ["problem solving", "problem-solving", "analytical"],
+    "web_dev": ["web dev", "web development", "frontend", "backend", "html", "css", "javascript", "js"],
+    "ml": ["ml", "machine learning"],
+}
+
+PLACEMENT_SKILL_THRESHOLD = 6
+
+
 def calculate_gap(student_skills, industry_standards):
     per_skill_gap = {}
     total_gap = 0
@@ -141,6 +155,45 @@ def create_app():
                     pass
             company["drive_date_display"] = drive_date_display
             company["drive_date_input"] = drive_date_input
+        return companies
+
+    def extract_required_skills(skills_required_text):
+        normalized_text = (skills_required_text or "").lower()
+        matched_skills = []
+        for skill_field, aliases in SKILL_ALIASES.items():
+            if any(alias in normalized_text for alias in aliases):
+                matched_skills.append(skill_field)
+        return matched_skills
+
+    def decorate_company_eligibility(companies, student_skills, student_cgpa):
+        for company in companies:
+            required_skills = extract_required_skills(company.get("skills_required", ""))
+            cgpa_ok = float(student_cgpa or 0) >= float(company.get("min_cgpa") or 0)
+            weak_required_skills = [
+                SKILL_LABELS[skill]
+                for skill in required_skills
+                if int(student_skills.get(skill, 0)) < PLACEMENT_SKILL_THRESHOLD
+            ]
+            company["eligibility_required_skills"] = [SKILL_LABELS[skill] for skill in required_skills]
+            company["eligibility_skill_threshold"] = PLACEMENT_SKILL_THRESHOLD
+            company["eligibility_cgpa_ok"] = cgpa_ok
+            company["eligibility_weak_skills"] = weak_required_skills
+            company["is_eligible"] = cgpa_ok and not weak_required_skills
+
+            if company["is_eligible"]:
+                company["eligibility_reason"] = "CGPA and required skill threshold satisfied."
+            elif not cgpa_ok and weak_required_skills:
+                company["eligibility_reason"] = (
+                    f"Below minimum CGPA and below skill threshold in {', '.join(weak_required_skills)}."
+                )
+            elif not cgpa_ok:
+                company["eligibility_reason"] = "Below the minimum CGPA requirement."
+            elif weak_required_skills:
+                company["eligibility_reason"] = (
+                    f"Improve {', '.join(weak_required_skills)} to at least {PLACEMENT_SKILL_THRESHOLD}/10."
+                )
+            else:
+                company["eligibility_reason"] = "Eligibility currently based on CGPA."
         return companies
 
     login_manager = LoginManager()
@@ -413,6 +466,8 @@ def create_app():
         page = min(page, total_pages)
         offset = (page - 1) * COMPANIES_PER_PAGE
         companies = decorate_company_dates(get_all_companies(app, company_search or None, COMPANIES_PER_PAGE, offset))
+        if current_user.role == "student":
+            companies = decorate_company_eligibility(companies, get_student_skill_record(app, current_user.id), current_user.cgpa)
         return render_template(
             "placement_hub.html",
             companies=companies,
@@ -726,12 +781,17 @@ def create_app():
 
     @app.errorhandler(403)
     def forbidden(_error):
-        return render_template("base.html", error_message="You do not have access to this page."), 403
+        return render_template(
+            "base.html",
+            error_title="Access Restricted",
+            error_message="You do not have access to this page.",
+        ), 403
 
     @app.errorhandler(500)
     def internal_server_error(_error):
         return render_template(
             "base.html",
+            error_title="Something Went Wrong",
             error_message="Something went wrong on the server. Please contact the administrator or try again later.",
         ), 500
 

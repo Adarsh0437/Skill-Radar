@@ -14,7 +14,7 @@ SkillRadar brings those workflows into a single web application.
 
 Students can:
 - register and manage their profile
-- rate their core placement skills
+- rate their core placement skills on a `0-10` scale
 - compare themselves with industry benchmark values
 - view radar-chart based skill analysis
 - check company eligibility
@@ -33,7 +33,7 @@ Placement officers can:
 
 ### Student Features
 - Secure student registration and login
-- Skill self-rating form for:
+- Skill self-rating form (`0-10`) for:
   - Python
   - SQL
   - Java
@@ -44,7 +44,7 @@ Placement officers can:
   - Machine Learning
 - Radar chart comparison between student skills and industry standards
 - Skill gap percentage calculation with suggested focus areas
-- Placement hub with eligibility badges
+- Placement hub with eligibility badges based on CGPA + required skill threshold
 - Profile update and account management
 
 ### Placement Officer Features
@@ -79,26 +79,27 @@ Placement officers can:
 ## Project Structure
 
 ```text
-smart_campus/
+Skill-Radar/
 ├── app.py
 ├── config.py
 ├── models.py
+├── pythonanywhere_wsgi.py
 ├── requirements.txt
+├── schema.sql
 ├── static/
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-│       └── chart.js
+│   ├── css/style.css
+│   ├── img/skillradar-logo.svg
+│   └── js/chart.js
 └── templates/
     ├── base.html
-    ├── login.html
-    ├── register.html
-    ├── dashboard.html
-    ├── skill_form.html
-    ├── visualize.html
-    ├── placement_hub.html
     ├── contact.html
-    └── officer_panel.html
+    ├── dashboard.html
+    ├── login.html
+    ├── officer_panel.html
+    ├── placement_hub.html
+    ├── register.html
+    ├── skill_form.html
+    └── visualize.html
 ```
 
 ## How It Works
@@ -107,7 +108,7 @@ smart_campus/
 2. Students log in and submit self-ratings for core placement skills.
 3. The app compares student ratings with predefined industry benchmark scores.
 4. A radar chart visually shows the difference between current skills and expected industry levels.
-5. The placement hub checks company eligibility using student CGPA and company minimum CGPA.
+5. The placement hub checks company eligibility using student CGPA and required tracked skill thresholds from the company profile.
 6. Officers can search, filter, export, and manage student and company records from the admin side.
 7. Contact and mentor information can be updated directly by the officer through the UI.
 
@@ -119,6 +120,15 @@ SkillRadar uses a simple and practical gap formula:
 - Overall skill gap % = `(sum of gaps / sum of industry benchmark scores) * 100`
 
 This helps students quickly understand where improvement is needed most.
+
+## Placement Eligibility Logic
+
+Placement Hub eligibility is based on:
+
+- `student.cgpa >= company.min_cgpa`
+- if the company's `skills_required` text mentions tracked skills like `Python`, `SQL`, `DSA`, or `Web Dev`, those skills must each be at least `6/10`
+
+This gives a more practical result than CGPA-only filtering while still keeping company setup simple for officers.
 
 ## Real-World Use Case
 
@@ -214,7 +224,7 @@ In a PythonAnywhere Bash console:
 
 ```bash
 git clone https://github.com/Adarsh0437/Skill-Radar.git
-cd Skill-Radar/smart_campus
+cd Skill-Radar
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -232,8 +242,8 @@ pip install -r requirements.txt
 
 Use these values:
 
-- Source code: `/home/yourusername/Skill-Radar/smart_campus`
-- Working directory: `/home/yourusername/Skill-Radar/smart_campus`
+- Source code: `/home/yourusername/Skill-Radar`
+- Working directory: `/home/yourusername/Skill-Radar`
 
 ### 4. Configure the WSGI file
 
@@ -243,7 +253,7 @@ Open the PythonAnywhere WSGI configuration file from the `Web` tab and replace i
 import os
 import sys
 
-PROJECT_DIR = '/home/yourusername/Skill-Radar/smart_campus'
+PROJECT_DIR = '/home/yourusername/Skill-Radar'
 if PROJECT_DIR not in sys.path:
     sys.path.insert(0, PROJECT_DIR)
 
@@ -259,7 +269,7 @@ You can also copy the same logic from [pythonanywhere_wsgi.py](/d:/ICTProject/sm
 In the `Web` tab, set the virtualenv path to:
 
 ```text
-/home/yourusername/Skill-Radar/smart_campus/.venv
+/home/yourusername/Skill-Radar/.venv
 ```
 
 ### 6. Reload the app
@@ -277,6 +287,11 @@ After the first load:
 - SQLite is the intended free deployment database for this setup
 - data will persist in your PythonAnywhere account files
 - keep `SECRET_KEY` set in your `.env` or WSGI environment if you want a custom secret
+
+## Notes
+
+- `schema.sql` is a legacy MySQL reference file from the original version of the project. The current running app uses SQLite locally/PythonAnywhere and optional PostgreSQL via `DATABASE_URL`.
+- If `DATABASE_URL` is not set, the app automatically falls back to SQLite.
 
 ## Future Improvements
 
