@@ -3,3 +3,4 @@ Flask-Login
 Werkzeug
 python-dotenv
 gunicorn
+psycopg2-binary

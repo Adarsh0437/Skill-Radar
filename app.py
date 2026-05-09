@@ -1,7 +1,6 @@
 import csv
 import logging
 import os
-import sqlite3
 from datetime import datetime
 from io import StringIO
 
@@ -10,6 +9,8 @@ from flask_login import LoginManager, current_user, login_required, login_user, 
 
 from config import Config
 from models import (
+    DatabaseIntegrityError,
+    DatabaseOperationalError,
     SKILL_FIELDS,
     add_company,
     add_alumni_mentor,
@@ -230,11 +231,11 @@ def create_app():
                     form["roll_number"],
                     form["department"],
                 )
-            except sqlite3.OperationalError as error:
+            except DatabaseOperationalError as error:
                 app.logger.exception("Student registration operational error: %s", error)
-                flash("Database update failed. Restart the app once and try registration again.", "danger")
+                flash("Database update failed. Please check the database connection and try again.", "danger")
                 return render_template("register.html", form=form)
-            except sqlite3.IntegrityError as error:
+            except DatabaseIntegrityError as error:
                 app.logger.exception("Student registration integrity error: %s", error)
                 flash("This student could not be registered because the email or roll number already exists.", "danger")
                 return render_template("register.html", form=form)
@@ -623,11 +624,11 @@ def create_app():
 
         try:
             create_officer(app, name, email, password, department)
-        except sqlite3.OperationalError as error:
+        except DatabaseOperationalError as error:
             app.logger.exception("Officer creation operational error: %s", error)
-            flash("Database update failed. Restart the app once and try creating the officer again.", "danger")
+            flash("Database update failed. Please check the database connection and try again.", "danger")
             return redirect(url_for("officer_panel"))
-        except sqlite3.IntegrityError as error:
+        except DatabaseIntegrityError as error:
             app.logger.exception("Officer creation integrity error: %s", error)
             flash("This officer could not be created because the email already exists.", "danger")
             return redirect(url_for("officer_panel"))

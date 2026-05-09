@@ -1,6 +1,6 @@
 # SkillRadar
 
-Smart Campus Placement & Skill Analyzer built with Flask, SQLite, Jinja2, vanilla JavaScript, and Plotly.
+Smart Campus Placement & Skill Analyzer built with Flask, SQLite/PostgreSQL, Jinja2, vanilla JavaScript, and Plotly.
 
 `SkillRadar` helps students understand placement readiness through skill self-assessment and benchmark comparison, while giving placement officers a centralized platform to manage students, company drives, contact information, and alumni mentors.
 
@@ -72,7 +72,7 @@ Placement officers can:
 
 - Backend: Flask
 - Authentication: Flask-Login
-- Database: SQLite
+- Database: SQLite locally, PostgreSQL for free cloud deployment
 - Frontend: HTML, CSS, Jinja2 templates, vanilla JavaScript
 - Charts: Plotly.js
 
@@ -173,7 +173,7 @@ pip install -r requirements.txt
 
 ### 4. Run the app
 
-The app uses SQLite and creates the database automatically on first run.
+The app uses SQLite locally by default and creates the database automatically on first run.
 
 ```bash
 flask --app app run
@@ -219,9 +219,9 @@ http://127.0.0.1:5000
 Developed by Adarsh  
 GitHub: [@Adarsh0437](https://github.com/Adarsh0437)
 
-## Deploy On Render
+## Deploy On Render Free
 
-SkillRadar is a much better fit for Render than Vercel when using SQLite, because Render supports a persistent disk for the `.db` file.
+SkillRadar can be deployed on Render free by using a free hosted PostgreSQL database such as Neon or Supabase.
 
 ### 1. Push the project to GitHub
 
@@ -233,7 +233,19 @@ Make sure your latest code is in the GitHub repo you want Render to deploy from.
 - Connect your GitHub repository
 - Select the `smart_campus` app repo
 
-### 3. Use these settings
+### 3. Create a free hosted PostgreSQL database
+
+Use either:
+- Neon Postgres
+- Supabase Postgres
+
+Copy the connection string they provide. It will look like:
+
+```text
+postgresql://username:password@host/database?sslmode=require
+```
+
+### 4. Use these Render settings
 
 - Environment: `Python 3`
 - Build Command:
@@ -248,37 +260,23 @@ pip install -r requirements.txt
 gunicorn app:app
 ```
 
-### 4. Add environment variables
+### 5. Add environment variables
 
 Set these in Render:
 
 - `SECRET_KEY` = your own secret key
-- `DB_PATH` = `/var/data/skillradar.db`
-
-### 5. Add a persistent disk
-
-Create a persistent disk in Render and mount it at:
-
-```text
-/var/data
-```
-
-This is important. Without the persistent disk, student registrations, officer creation, skills, and all CRUD changes will not stay saved between deploys/restarts.
-
-Important:
-- Render persistent disks require a paid web service
-- a free Render web service will not preserve SQLite writes reliably
+- `DATABASE_URL` = your hosted PostgreSQL connection string
 
 ### 6. Deploy
 
 After the first deploy:
 
-- the app will automatically create the SQLite schema
+- the app will automatically create the PostgreSQL schema
 - default accounts will be seeded if they do not already exist
-- future registrations and officer-created records will persist to the Render disk
+- future registrations and officer-created records will persist in the hosted database
 
 ### Render Notes
 
-- SQLite is acceptable here for a student/demo deployment
-- Render is more suitable than Vercel for this file-based database setup
-- If you later want a stronger production setup, move from SQLite to Postgres
+- local development still uses SQLite unless `DATABASE_URL` is set
+- Render free should use hosted PostgreSQL, not file-based SQLite
+- this lets student registration, login, officer creation, skills, companies, contacts, and mentors stay saved properly on the free plan
