@@ -5,7 +5,7 @@
     <form class="card form-card premium-surface skill-form-card" method="POST">
         <p class="eyebrow">Self assessment</p>
         <h1>Rate your current strengths</h1>
-        <p class="muted">Use the sliders to self-assess from 1 to 10. Your saved values will be loaded automatically each time you return.</p>
+        <p class="muted">Use the sliders to self-assess from 0 to 10. Your saved values will be loaded automatically each time you return.</p>
         <div class="slider-list">
             {% for field in ['python', 'sql', 'java', 'dsa', 'communication', 'problem_solving', 'web_dev', 'ml'] %}
                 <div class="slider-row">
@@ -17,7 +17,7 @@
                         id="{{ field }}"
                         class="skill-slider"
                         type="range"
-                        min="1"
+                        min="0"
                         max="10"
                         value="{{ skills[field] }}"
                         name="{{ field }}"

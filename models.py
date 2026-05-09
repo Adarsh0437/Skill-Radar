@@ -220,29 +220,71 @@ def ensure_users_columns(app=None):
         execute_query(app, "ALTER TABLE users ADD COLUMN passout_year INTEGER DEFAULT NULL")
 
 
+def migrate_skills_table_to_zero_scale(app=None):
+    if get_db_backend(app) != "sqlite":
+        return
+
+    ensure_app_meta_table(app)
+    already_migrated = fetch_one(
+        app,
+        "SELECT meta_key FROM app_meta WHERE meta_key = ?",
+        ("skills_zero_scale_v1",),
+    )
+    if already_migrated:
+        return
+
+    schema_row = fetch_one(
+        app,
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
+        ("skills",),
+    )
+    if not schema_row:
+        return
+
+    schema_sql = (schema_row.get("sql") or "").upper()
+    if "BETWEEN 1 AND 10" in schema_sql or "DEFAULT 1" in schema_sql:
+        execute_query(app, "ALTER TABLE skills RENAME TO skills_old")
+        ensure_skills_table(app)
+        execute_query(
+            app,
+            """
+            INSERT INTO skills (id, user_id, python, sql, java, dsa, communication, problem_solving, web_dev, ml, updated_at)
+            SELECT id, user_id, python, sql, java, dsa, communication, problem_solving, web_dev, ml, updated_at
+            FROM skills_old
+            """,
+        )
+        execute_query(app, "DROP TABLE skills_old")
+
+    execute_query(
+        app,
+        "INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?)",
+        ("skills_zero_scale_v1", "done"),
+    )
+
+
 def ensure_skills_table(app=None):
     if get_db_backend(app) == "postgres":
         query = """
             CREATE TABLE IF NOT EXISTS skills (
                 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-                python SMALLINT NOT NULL DEFAULT 1,
-                sql SMALLINT NOT NULL DEFAULT 1,
-                java SMALLINT NOT NULL DEFAULT 1,
-                dsa SMALLINT NOT NULL DEFAULT 1,
-                communication SMALLINT NOT NULL DEFAULT 1,
-                problem_solving SMALLINT NOT NULL DEFAULT 1,
-                web_dev SMALLINT NOT NULL DEFAULT 1,
-                ml SMALLINT NOT NULL DEFAULT 1,
+                python SMALLINT NOT NULL DEFAULT 0,
+                sql SMALLINT NOT NULL DEFAULT 0,
+                java SMALLINT NOT NULL DEFAULT 0,
+                dsa SMALLINT NOT NULL DEFAULT 0,
+                communication SMALLINT NOT NULL DEFAULT 0,
+                problem_solving SMALLINT NOT NULL DEFAULT 0,
+                web_dev SMALLINT NOT NULL DEFAULT 0,
+                ml SMALLINT NOT NULL DEFAULT 0,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                CHECK (python BETWEEN 1 AND 10),
-                CHECK (sql BETWEEN 1 AND 10),
-                CHECK (java BETWEEN 1 AND 10),
-                CHECK (dsa BETWEEN 1 AND 10),
-                CHECK (communication BETWEEN 1 AND 10),
-                CHECK (problem_solving BETWEEN 1 AND 10),
-                CHECK (web_dev BETWEEN 1 AND 10),
-                CHECK (ml BETWEEN 1 AND 10)
+                CHECK (python BETWEEN 0 AND 10),
+                CHECK (sql BETWEEN 0 AND 10),
+                CHECK (java BETWEEN 0 AND 10),
+                CHECK (dsa BETWEEN 0 AND 10),
+                CHECK (communication BETWEEN 0 AND 10),
+                CHECK (problem_solving BETWEEN 0 AND 10),
+                CHECK (web_dev BETWEEN 0 AND 10),
+                CHECK (ml BETWEEN 0 AND 10)
             )
         """
     else:
@@ -250,24 +292,24 @@ def ensure_skills_table(app=None):
             CREATE TABLE IF NOT EXISTS skills (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL UNIQUE,
-                python TINYINT NOT NULL DEFAULT 1,
-                sql TINYINT NOT NULL DEFAULT 1,
-                java TINYINT NOT NULL DEFAULT 1,
-                dsa TINYINT NOT NULL DEFAULT 1,
-                communication TINYINT NOT NULL DEFAULT 1,
-                problem_solving TINYINT NOT NULL DEFAULT 1,
-                web_dev TINYINT NOT NULL DEFAULT 1,
-                ml TINYINT NOT NULL DEFAULT 1,
+                python TINYINT NOT NULL DEFAULT 0,
+                sql TINYINT NOT NULL DEFAULT 0,
+                java TINYINT NOT NULL DEFAULT 0,
+                dsa TINYINT NOT NULL DEFAULT 0,
+                communication TINYINT NOT NULL DEFAULT 0,
+                problem_solving TINYINT NOT NULL DEFAULT 0,
+                web_dev TINYINT NOT NULL DEFAULT 0,
+                ml TINYINT NOT NULL DEFAULT 0,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                CHECK (python BETWEEN 1 AND 10),
-                CHECK (sql BETWEEN 1 AND 10),
-                CHECK (java BETWEEN 1 AND 10),
-                CHECK (dsa BETWEEN 1 AND 10),
-                CHECK (communication BETWEEN 1 AND 10),
-                CHECK (problem_solving BETWEEN 1 AND 10),
-                CHECK (web_dev BETWEEN 1 AND 10),
-                CHECK (ml BETWEEN 1 AND 10)
+                CHECK (python BETWEEN 0 AND 10),
+                CHECK (sql BETWEEN 0 AND 10),
+                CHECK (java BETWEEN 0 AND 10),
+                CHECK (dsa BETWEEN 0 AND 10),
+                CHECK (communication BETWEEN 0 AND 10),
+                CHECK (problem_solving BETWEEN 0 AND 10),
+                CHECK (web_dev BETWEEN 0 AND 10),
+                CHECK (ml BETWEEN 0 AND 10)
             )
         """
     execute_query(app, query)
@@ -347,6 +389,26 @@ def ensure_contact_settings_table(app=None):
         )
 
 
+def ensure_app_meta_table(app=None):
+    if get_db_backend(app) == "postgres":
+        query = """
+            CREATE TABLE IF NOT EXISTS app_meta (
+                meta_key VARCHAR(150) PRIMARY KEY,
+                meta_value VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+    else:
+        query = """
+            CREATE TABLE IF NOT EXISTS app_meta (
+                meta_key VARCHAR(150) PRIMARY KEY,
+                meta_value VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+    execute_query(app, query)
+
+
 def get_contact_settings(app):
     ensure_contact_settings_table(app)
     return fetch_one(app, "SELECT * FROM contact_settings WHERE id = 1")
@@ -369,10 +431,13 @@ def ensure_schema(app=None):
     ensure_users_table(app)
     ensure_users_columns(app)
     ensure_skills_table(app)
+    migrate_skills_table_to_zero_scale(app)
     ensure_companies_table(app)
     ensure_contact_settings_table(app)
+    ensure_app_meta_table(app)
     ensure_alumni_mentors_table(app)
     seed_default_users(app)
+    seed_default_skill_profiles(app)
 
 
 def seed_default_users(app=None):
@@ -438,6 +503,83 @@ def seed_default_users(app=None):
                 2024,
             ),
         )
+
+
+def seed_default_skill_profiles(app=None):
+    ensure_users_table(app)
+    ensure_skills_table(app)
+    ensure_app_meta_table(app)
+
+    already_seeded = fetch_one(
+        app,
+        "SELECT meta_key FROM app_meta WHERE meta_key = ?",
+        ("default_skill_profiles_seeded_v2",),
+    )
+    if already_seeded:
+        return
+
+    insert_query = """
+        INSERT INTO skills (
+            user_id, python, sql, java, dsa, communication, problem_solving, web_dev, ml
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """
+    update_query = """
+        UPDATE skills
+        SET python = ?, sql = ?, java = ?, dsa = ?, communication = ?, problem_solving = ?, web_dev = ?, ml = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+    """
+    profile_by_email = {
+        "student1@campus.edu": (0, 7, 5, 6, 8, 6, 5, 4),
+        "student2@campus.edu": (6, 0, 7, 5, 6, 8, 4, 5),
+    }
+    balanced_profiles = [
+        (7, 6, 5, 6, 7, 6, 5, 4),
+        (6, 5, 7, 5, 6, 8, 4, 5),
+        (5, 7, 6, 6, 5, 7, 6, 4),
+        (6, 4, 5, 7, 8, 5, 6, 3),
+    ]
+
+    named_students = fetch_all(
+        app,
+        """
+        SELECT id, email
+        FROM users
+        WHERE role = 'student' AND email IN (?, ?)
+        ORDER BY created_at ASC, id ASC
+        """,
+        tuple(profile_by_email.keys()),
+    )
+    for student in named_students:
+        existing_skill = fetch_one(app, "SELECT user_id FROM skills WHERE user_id = ?", (student["id"],))
+        default_values = profile_by_email[student["email"].lower()]
+        if existing_skill:
+            execute_query(app, update_query, (*default_values, student["id"]))
+        else:
+            execute_query(app, insert_query, (student["id"], *default_values))
+
+    students_without_skills = fetch_all(
+        app,
+        """
+        SELECT u.id, u.email
+        FROM users u
+        LEFT JOIN skills s ON s.user_id = u.id
+        WHERE u.role = 'student' AND s.user_id IS NULL
+        ORDER BY u.created_at ASC, u.id ASC
+        """,
+    )
+    for index, student in enumerate(students_without_skills):
+        if student.get("email", "").lower() in profile_by_email:
+            continue
+        default_values = balanced_profiles[index % len(balanced_profiles)]
+        execute_query(app, insert_query, (student["id"], *default_values))
+
+    execute_query(
+        app,
+        "INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?)",
+        ("default_skill_profiles_seeded_v2", "done"),
+    )
 
 
 def ensure_alumni_mentors_table(app=None):
@@ -667,7 +809,7 @@ def get_student_skill_record(app, user_id):
     )
     if record:
         return record
-    return {field: 1 for field in SKILL_FIELDS} | {"user_id": user_id, "updated_at": None}
+    return {field: 0 for field in SKILL_FIELDS} | {"user_id": user_id, "updated_at": None}
 
 
 def upsert_student_skills(app, user_id, skill_values):
@@ -832,7 +974,7 @@ def get_students_with_skill_average(
             conditions.append(f"COALESCE(s.{skill_name}, 0) >= ?")
             params.append(min_skill_score)
         else:
-            conditions.append(f"COALESCE(s.{skill_name}, 0) > 1")
+            conditions.append(f"COALESCE(s.{skill_name}, 0) > 0")
     if passout_year:
         conditions.append("u.passout_year = ?")
         params.append(passout_year)
@@ -904,7 +1046,7 @@ def count_students(
             conditions.append(f"COALESCE(s.{skill_name}, 0) >= ?")
             params.append(min_skill_score)
         else:
-            conditions.append(f"COALESCE(s.{skill_name}, 0) > 1")
+            conditions.append(f"COALESCE(s.{skill_name}, 0) > 0")
     if passout_year:
         conditions.append("u.passout_year = ?")
         params.append(passout_year)

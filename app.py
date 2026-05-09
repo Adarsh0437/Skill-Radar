@@ -262,7 +262,7 @@ def create_app():
         skills = get_student_skill_record(app, current_user.id)
         saved_scores = [int(skills[field]) for field in SKILL_FIELDS]
         has_skill_profile = skills.get("updated_at") is not None
-        completion = round((sum(1 for score in saved_scores if score > 1) / len(SKILL_FIELDS)) * 100)
+        completion = round((sum(1 for score in saved_scores if score > 0) / len(SKILL_FIELDS)) * 100)
         skill_avg = round(sum(saved_scores) / len(saved_scores), 2) if has_skill_profile else None
         if has_skill_profile:
             _, overall_gap, top_focus = calculate_gap(skills, INDUSTRY_STANDARDS)
@@ -336,12 +336,12 @@ def create_app():
             skill_values = {}
             try:
                 for field in SKILL_FIELDS:
-                    value = int(request.form.get(field, 1))
-                    if value < 1 or value > 10:
+                    value = int(request.form.get(field, 0))
+                    if value < 0 or value > 10:
                         raise ValueError
                     skill_values[field] = value
             except ValueError:
-                flash("Each skill rating must be between 1 and 10.", "danger")
+                flash("Each skill rating must be between 0 and 10.", "danger")
                 return redirect(url_for("skill_form"))
 
             upsert_student_skills(app, current_user.id, skill_values)
