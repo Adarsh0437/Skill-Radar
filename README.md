@@ -214,9 +214,71 @@ http://127.0.0.1:5000
 - Email: `student2@campus.edu`
 - Password: `pass123`
 
+## Deploy On Render Free
+
+Render is the primary cloud deployment path for this project. For reliable persistence on the free plan, use a free hosted PostgreSQL database such as Neon or Supabase.
+
+### 1. Push the project to GitHub
+
+Make sure your latest code is in the GitHub repo you want Render to deploy from.
+
+### 2. Create a new Render Web Service
+
+- Choose `New +` -> `Web Service`
+- Connect your GitHub repository
+- Select the `Skill-Radar` repo
+
+### 3. Create a free hosted PostgreSQL database
+
+Use either:
+- Neon Postgres
+- Supabase Postgres
+
+Copy the connection string they provide. It will look like:
+
+```text
+postgresql://username:password@host/database?sslmode=require
+```
+
+### 4. Use these Render settings
+
+- Environment: `Python 3`
+- Build Command:
+
+```bash
+pip install -r requirements.txt
+```
+
+- Start Command:
+
+```bash
+gunicorn app:app
+```
+
+### 5. Add environment variables
+
+Set these in Render:
+
+- `SECRET_KEY` = your own secret key
+- `DATABASE_URL` = your hosted PostgreSQL connection string
+
+### 6. Deploy
+
+After the first deploy:
+
+- the app will automatically create the PostgreSQL schema
+- default accounts will be seeded if they do not already exist
+- future registrations and officer-created records will persist in the hosted database
+
+### Render Notes
+
+- local development still uses SQLite unless `DATABASE_URL` is set
+- Render free should use hosted PostgreSQL, not file-based SQLite
+- this lets student registration, login, officer creation, skills, companies, contacts, and mentors stay saved properly on the free plan
+
 ## Deploy On PythonAnywhere Free
 
-SkillRadar is a good fit for PythonAnywhere free because SQLite data is stored in your account files and stays available between restarts.
+PythonAnywhere is a simpler fallback deployment option when you want to keep SQLite and have the database file persist in your account storage.
 
 ### 1. Upload or clone the project
 
@@ -307,65 +369,3 @@ After the first load:
 
 Developed by Adarsh  
 GitHub: [@Adarsh0437](https://github.com/Adarsh0437)
-
-## Deploy On Render Free
-
-SkillRadar can be deployed on Render free by using a free hosted PostgreSQL database such as Neon or Supabase.
-
-### 1. Push the project to GitHub
-
-Make sure your latest code is in the GitHub repo you want Render to deploy from.
-
-### 2. Create a new Render Web Service
-
-- Choose `New +` -> `Web Service`
-- Connect your GitHub repository
-- Select the `smart_campus` app repo
-
-### 3. Create a free hosted PostgreSQL database
-
-Use either:
-- Neon Postgres
-- Supabase Postgres
-
-Copy the connection string they provide. It will look like:
-
-```text
-postgresql://username:password@host/database?sslmode=require
-```
-
-### 4. Use these Render settings
-
-- Environment: `Python 3`
-- Build Command:
-
-```bash
-pip install -r requirements.txt
-```
-
-- Start Command:
-
-```bash
-gunicorn app:app
-```
-
-### 5. Add environment variables
-
-Set these in Render:
-
-- `SECRET_KEY` = your own secret key
-- `DATABASE_URL` = your hosted PostgreSQL connection string
-
-### 6. Deploy
-
-After the first deploy:
-
-- the app will automatically create the PostgreSQL schema
-- default accounts will be seeded if they do not already exist
-- future registrations and officer-created records will persist in the hosted database
-
-### Render Notes
-
-- local development still uses SQLite unless `DATABASE_URL` is set
-- Render free should use hosted PostgreSQL, not file-based SQLite
-- this lets student registration, login, officer creation, skills, companies, contacts, and mentors stay saved properly on the free plan
