@@ -1,6 +1,6 @@
 # SkillRadar
 
-Smart Campus Placement & Skill Analyzer built with Flask, MySQL, Jinja2, vanilla JavaScript, and Plotly.
+Smart Campus Placement & Skill Analyzer built with Flask, SQLite, Jinja2, vanilla JavaScript, and Plotly.
 
 `SkillRadar` helps students understand placement readiness through skill self-assessment and benchmark comparison, while giving placement officers a centralized platform to manage students, company drives, contact information, and alumni mentors.
 
@@ -72,7 +72,7 @@ Placement officers can:
 
 - Backend: Flask
 - Authentication: Flask-Login
-- Database: MySQL + PyMySQL
+- Database: SQLite
 - Frontend: HTML, CSS, Jinja2 templates, vanilla JavaScript
 - Charts: Plotly.js
 
@@ -218,3 +218,67 @@ http://127.0.0.1:5000
 
 Developed by Adarsh  
 GitHub: [@Adarsh0437](https://github.com/Adarsh0437)
+
+## Deploy On Render
+
+SkillRadar is a much better fit for Render than Vercel when using SQLite, because Render supports a persistent disk for the `.db` file.
+
+### 1. Push the project to GitHub
+
+Make sure your latest code is in the GitHub repo you want Render to deploy from.
+
+### 2. Create a new Render Web Service
+
+- Choose `New +` -> `Web Service`
+- Connect your GitHub repository
+- Select the `smart_campus` app repo
+
+### 3. Use these settings
+
+- Environment: `Python 3`
+- Build Command:
+
+```bash
+pip install -r requirements.txt
+```
+
+- Start Command:
+
+```bash
+gunicorn app:app
+```
+
+### 4. Add environment variables
+
+Set these in Render:
+
+- `SECRET_KEY` = your own secret key
+- `DB_PATH` = `/var/data/skillradar.db`
+
+### 5. Add a persistent disk
+
+Create a persistent disk in Render and mount it at:
+
+```text
+/var/data
+```
+
+This is important. Without the persistent disk, student registrations, officer creation, skills, and all CRUD changes will not stay saved between deploys/restarts.
+
+Important:
+- Render persistent disks require a paid web service
+- a free Render web service will not preserve SQLite writes reliably
+
+### 6. Deploy
+
+After the first deploy:
+
+- the app will automatically create the SQLite schema
+- default accounts will be seeded if they do not already exist
+- future registrations and officer-created records will persist to the Render disk
+
+### Render Notes
+
+- SQLite is acceptable here for a student/demo deployment
+- Render is more suitable than Vercel for this file-based database setup
+- If you later want a stronger production setup, move from SQLite to Postgres
