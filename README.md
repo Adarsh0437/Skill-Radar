@@ -72,7 +72,7 @@ Placement officers can:
 
 - Backend: Flask
 - Authentication: Flask-Login
-- Database: SQLite locally, PostgreSQL for free cloud deployment
+- Database: SQLite locally and on PythonAnywhere free, PostgreSQL for Render free
 - Frontend: HTML, CSS, Jinja2 templates, vanilla JavaScript
 - Charts: Plotly.js
 
@@ -203,6 +203,80 @@ http://127.0.0.1:5000
 
 - Email: `student2@campus.edu`
 - Password: `pass123`
+
+## Deploy On PythonAnywhere Free
+
+SkillRadar is a good fit for PythonAnywhere free because SQLite data is stored in your account files and stays available between restarts.
+
+### 1. Upload or clone the project
+
+In a PythonAnywhere Bash console:
+
+```bash
+git clone https://github.com/Adarsh0437/Skill-Radar.git
+cd Skill-Radar/smart_campus
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Create the web app
+
+- Go to the PythonAnywhere dashboard
+- Open the `Web` tab
+- Click `Add a new web app`
+- Choose `Manual configuration`
+- Choose `Python 3.12`
+
+### 3. Set the source paths
+
+Use these values:
+
+- Source code: `/home/yourusername/Skill-Radar/smart_campus`
+- Working directory: `/home/yourusername/Skill-Radar/smart_campus`
+
+### 4. Configure the WSGI file
+
+Open the PythonAnywhere WSGI configuration file from the `Web` tab and replace its contents with:
+
+```python
+import os
+import sys
+
+PROJECT_DIR = '/home/yourusername/Skill-Radar/smart_campus'
+if PROJECT_DIR not in sys.path:
+    sys.path.insert(0, PROJECT_DIR)
+
+os.environ.setdefault('DB_PATH', os.path.join(PROJECT_DIR, 'instance', 'skillradar.db'))
+
+from app import app as application
+```
+
+You can also copy the same logic from [pythonanywhere_wsgi.py](/d:/ICTProject/smart_campus/pythonanywhere_wsgi.py).
+
+### 5. Set up the virtualenv
+
+In the `Web` tab, set the virtualenv path to:
+
+```text
+/home/yourusername/Skill-Radar/smart_campus/.venv
+```
+
+### 6. Reload the app
+
+Click `Reload` in the `Web` tab.
+
+After the first load:
+- the SQLite database file will be created automatically
+- default student and officer accounts will be seeded
+- student registration, officer creation, login, skills, companies, mentors, and contact settings will all be stored in SQLite
+
+### PythonAnywhere Notes
+
+- you do not need `DATABASE_URL` for PythonAnywhere free
+- SQLite is the intended free deployment database for this setup
+- data will persist in your PythonAnywhere account files
+- keep `SECRET_KEY` set in your `.env` or WSGI environment if you want a custom secret
 
 ## Future Improvements
 
