@@ -3,9 +3,14 @@ import os
 import sqlite3
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-import psycopg2
-from psycopg2 import OperationalError as PostgresOperationalError
-from psycopg2.extras import RealDictCursor
+try:
+    import psycopg2
+    from psycopg2 import OperationalError as PostgresOperationalError
+    from psycopg2.extras import RealDictCursor
+except ImportError:  # Local SQLite-only environments do not need psycopg2 installed.
+    psycopg2 = None
+    PostgresOperationalError = Exception
+    RealDictCursor = None
 
 from flask import abort
 from flask_login import UserMixin, current_user
@@ -79,6 +84,10 @@ class User(UserMixin):
 def get_connection(app=None):
     backend = get_db_backend(app)
     if backend == "postgres":
+        if psycopg2 is None:
+            raise DatabaseOperationalError(
+                "PostgreSQL support is enabled through DATABASE_URL, but psycopg2 is not installed."
+            )
         try:
             conn = psycopg2.connect(_postgres_dsn(resolve_database_url(app)))
         except PostgresOperationalError as exc:
@@ -409,6 +418,46 @@ def ensure_app_meta_table(app=None):
     execute_query(app, query)
 
 
+def seed_default_companies(app=None):
+    ensure_companies_table(app)
+    ensure_app_meta_table(app)
+
+    already_seeded = fetch_one(
+        app,
+        "SELECT meta_key FROM app_meta WHERE meta_key = ?",
+        ("default_companies_seeded_v1",),
+    )
+    if already_seeded:
+        return
+
+    existing_count = fetch_one(app, "SELECT COUNT(*) AS total FROM companies")
+    if existing_count and existing_count["total"] == 0:
+        insert_query = """
+            INSERT INTO companies (name, role, ctc_lpa, min_cgpa, skills_required, drive_date, prep_kit_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        companies = [
+            ("TCS", "Graduate Trainee", 3.6, 6.0, "Communication, Aptitude, Basic Programming", "2026-06-15", "https://www.tcs.com/careers"),
+            ("Infosys", "Systems Engineer", 4.0, 6.5, "Python, SQL, Problem Solving", "2026-06-20", "https://www.infosys.com/careers"),
+            ("Wipro", "Project Engineer", 3.5, 6.0, "Java, Communication, Aptitude", "2026-06-24", "https://careers.wipro.com"),
+            ("Zoho", "Software Developer", 6.5, 7.0, "Python, Java, DSA, Web Dev", "2026-07-02", "https://www.zoho.com/careers"),
+            ("Accenture", "Associate Software Engineer", 4.5, 6.5, "Problem Solving, Communication, SQL", "2026-07-08", "https://www.accenture.com/in-en/careers"),
+            ("Cognizant", "Programmer Analyst Trainee", 4.2, 6.0, "SQL, Java, Communication", "2026-07-12", "https://careers.cognizant.com"),
+            ("Capgemini", "Analyst", 4.0, 6.0, "Aptitude, Problem Solving, Web Dev", "2026-07-18", "https://www.capgemini.com/careers"),
+            ("Amazon", "Support Engineer", 8.0, 7.5, "DSA, Python, Problem Solving", "2026-07-26", "https://www.amazon.jobs"),
+            ("Deloitte", "Technology Analyst", 6.0, 7.0, "Communication, SQL, Web Dev", "2026-08-03", "https://www2.deloitte.com/global/en/careers.html"),
+            ("HCLTech", "Software Engineer", 4.25, 6.0, "Java, SQL, Communication", "2026-08-09", "https://www.hcltech.com/careers"),
+        ]
+        for company in companies:
+            execute_query(app, insert_query, company)
+
+    execute_query(
+        app,
+        "INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?)",
+        ("default_companies_seeded_v1", "done"),
+    )
+
+
 def get_contact_settings(app):
     ensure_contact_settings_table(app)
     return fetch_one(app, "SELECT * FROM contact_settings WHERE id = 1")
@@ -438,6 +487,7 @@ def ensure_schema(app=None):
     ensure_alumni_mentors_table(app)
     seed_default_users(app)
     seed_default_skill_profiles(app)
+    seed_default_companies(app)
 
 
 def seed_default_users(app=None):

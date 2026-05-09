@@ -76,7 +76,7 @@
                 <div class="company-meta">
                     <span>CTC: {{ company.ctc_lpa }} LPA</span>
                     <span>Min CGPA: {{ company.min_cgpa }}</span>
-                    <span>Drive Date: {{ company.drive_date.strftime('%d %b %Y') }}</span>
+                    <span>Drive Date: {{ company.drive_date_display }}</span>
                 </div>
                 <p><strong>Skills Required:</strong> {{ company.skills_required }}</p>
                 <a class="button secondary-button" href="{{ company.prep_kit_url }}" target="_blank" rel="noopener noreferrer">Get Prep Kit</a>
@@ -99,7 +99,7 @@
                             <input type="text" name="skills_required" value="{{ company.skills_required }}" required>
                         </label>
                         <label>Drive Date
-                            <input type="date" name="drive_date" value="{{ company.drive_date.strftime('%Y-%m-%d') }}" required>
+                            <input type="date" name="drive_date" value="{{ company.drive_date_input }}" required>
                         </label>
                         <label class="full-span">Prep Kit URL
                             <input type="url" name="prep_kit_url" value="{{ company.prep_kit_url }}" required>

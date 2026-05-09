@@ -127,6 +127,22 @@ def create_app():
             raise ValueError("Passout year must be between 2000 and 2100.")
         return value
 
+    def decorate_company_dates(companies):
+        for company in companies:
+            drive_date_raw = company.get("drive_date")
+            drive_date_display = drive_date_raw
+            drive_date_input = drive_date_raw
+            if isinstance(drive_date_raw, str) and drive_date_raw:
+                try:
+                    parsed_date = datetime.strptime(drive_date_raw, "%Y-%m-%d")
+                    drive_date_display = parsed_date.strftime("%d %b %Y")
+                    drive_date_input = parsed_date.strftime("%Y-%m-%d")
+                except ValueError:
+                    pass
+            company["drive_date_display"] = drive_date_display
+            company["drive_date_input"] = drive_date_input
+        return companies
+
     login_manager = LoginManager()
     login_manager.login_view = "login"
     login_manager.init_app(app)
@@ -396,7 +412,7 @@ def create_app():
         total_pages = max(1, (total_companies + COMPANIES_PER_PAGE - 1) // COMPANIES_PER_PAGE)
         page = min(page, total_pages)
         offset = (page - 1) * COMPANIES_PER_PAGE
-        companies = get_all_companies(app, company_search or None, COMPANIES_PER_PAGE, offset)
+        companies = decorate_company_dates(get_all_companies(app, company_search or None, COMPANIES_PER_PAGE, offset))
         return render_template(
             "placement_hub.html",
             companies=companies,
